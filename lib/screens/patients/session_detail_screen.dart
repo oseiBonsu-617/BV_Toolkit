@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../models/assessment.dart';
 import '../../models/test_session.dart';
+import '../../services/assessment_engine.dart';
 import '../../services/session_service.dart';
 import '../../theme.dart';
 import '../../widgets/result_card.dart';
@@ -12,6 +14,8 @@ class SessionDetailScreen extends StatelessWidget {
 
   double? _n(String key) => session.numVal(key);
   bool _has(List<String> keys) => keys.any((k) => session.data.containsKey(k));
+
+  DiagnosisPlan? get _plan => AssessmentEngine().planFromSession(session);
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +69,10 @@ class SessionDetailScreen extends StatelessWidget {
           if (_has(['dx_pd', 'dx_pn', 'dx_aca', 'dx_nb', 'dx_age', 'dx_amp',
                      'dx_fac_bin', 'dx_mem', 'dx_bi_brk', 'dx_bo_brk', 'dx_fac_fail'])) ...[
             _diagnosisCard(isDark),
+            const SizedBox(height: 10),
+          ],
+          if (_plan != null) ...[
+            _managementSection(isDark, _plan!),
             const SizedBox(height: 10),
           ],
           const SizedBox(height: 14),
@@ -348,6 +356,115 @@ class SessionDetailScreen extends StatelessWidget {
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
     ]),
   );
+
+  // ─── Management plan (derived from measurements) ──────────────────────────
+
+  Widget _managementSection(bool isDark, DiagnosisPlan plan) {
+    final byTier = <ManagementTier, List<ManagementOption>>{};
+    for (final o in plan.options) {
+      byTier.putIfAbsent(o.tier, () => []).add(o);
+    }
+    final tierOrder = [ManagementTier.firstLine, ManagementTier.secondLine, ManagementTier.adjunct];
+
+    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const CardTitle(icon: Icons.healing_outlined, text: 'Management plan'),
+
+      // Diagnosis name
+      Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: kPrimary.withAlpha(15),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: kPrimary.withAlpha(50), width: 0.5),
+        ),
+        child: Text(plan.name,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kPrimary)),
+      ),
+
+      // Options by tier
+      ...tierOrder.where(byTier.containsKey).expand((tier) {
+        final (bg, fg) = switch (tier) {
+          ManagementTier.firstLine  => (kOkBg, kOkText),
+          ManagementTier.secondLine => (kWarnBg, kWarnTextDark),
+          ManagementTier.adjunct    => (kBadgeBlueBg, kBadgeBlueText),
+        };
+        return [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
+              child: Text(tier.label.toUpperCase(),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600,
+                      color: fg, letterSpacing: 0.5)),
+            ),
+          ),
+          ...byTier[tier]!.map((o) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(o.title,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 3),
+              Text(o.detail,
+                  style: TextStyle(fontSize: 12, height: 1.5,
+                      color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73))),
+            ]),
+          )),
+        ];
+      }),
+
+      // Patient advice
+      const SizedBox(height: 2),
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Icon(Icons.person_outline, size: 14, color: kPrimary),
+        const SizedBox(width: 6),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Patient advice',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: kPrimary)),
+          const SizedBox(height: 2),
+          Text(plan.patientAdvice,
+              style: TextStyle(fontSize: 12, height: 1.5,
+                  color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73))),
+        ])),
+      ]),
+
+      // Review
+      const SizedBox(height: 8),
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Icon(Icons.event_outlined, size: 14, color: kPrimary),
+        const SizedBox(width: 6),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Review',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: kPrimary)),
+          const SizedBox(height: 2),
+          Text(plan.reviewSchedule,
+              style: TextStyle(fontSize: 12, height: 1.5,
+                  color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73))),
+        ])),
+      ]),
+
+      // Referral criteria
+      if (plan.referralCriteria.isNotEmpty) ...[
+        const SizedBox(height: 10),
+        ...plan.referralCriteria.map((r) => Container(
+          margin: const EdgeInsets.only(bottom: 5),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: kWarnBg,
+            border: Border.all(color: kWarnBorder, width: 0.5),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.warning_amber_outlined, size: 14, color: kWarnTextDark),
+            const SizedBox(width: 6),
+            Expanded(child: Text(r,
+                style: const TextStyle(fontSize: 12, color: kWarnTextDark, height: 1.4))),
+          ]),
+        )),
+      ],
+    ]));
+  }
 
   void _confirmDelete(BuildContext context) {
     showDialog(

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/patient.dart';
 import '../../models/test_session.dart';
+import '../assessment/assessment_screen.dart';
 import '../../services/patient_service.dart';
 import '../../services/session_service.dart';
 import '../../theme.dart';
@@ -43,6 +44,80 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     ).then((_) => _reload());
   }
 
+  void _showSessionOptions() {
+    final patient = context.read<PatientService>().getById(widget.patientId);
+    if (patient == null) return;
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 16),
+            _sheetTile(
+              ctx,
+              icon: Icons.track_changes_outlined,
+              title: 'Clinical assessment',
+              subtitle: 'Guide which tests to run based on symptoms & cover test',
+              onTap: () {
+                Navigator.pop(ctx);
+                _startAssessment(patient);
+              },
+            ),
+            const SizedBox(height: 4),
+            _sheetTile(
+              ctx,
+              icon: Icons.edit_note_outlined,
+              title: 'Direct entry',
+              subtitle: 'Open session form with all test sections',
+              onTap: () {
+                Navigator.pop(ctx);
+                _newSession();
+              },
+            ),
+            const SizedBox(height: 8),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _sheetTile(BuildContext ctx, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      leading: Container(
+        width: 40, height: 40,
+        decoration: BoxDecoration(
+          color: kPrimary.withAlpha(20),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 20, color: kPrimary),
+      ),
+      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+      trailing: const Icon(Icons.chevron_right, size: 18),
+    );
+  }
+
+  void _startAssessment(Patient patient) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AssessmentScreen(patient: patient)),
+    ).then((_) => _reload());
+  }
+
   @override
   Widget build(BuildContext context) {
     final patient = context.watch<PatientService>().getById(widget.patientId);
@@ -70,7 +145,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _newSession,
+        onPressed: _showSessionOptions,
         icon: const Icon(Icons.add),
         label: const Text('New session'),
         backgroundColor: kPrimary,
