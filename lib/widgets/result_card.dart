@@ -178,9 +178,9 @@ class Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-      child: Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: fg)),
+      child: Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: fg)),
     );
   }
 }
@@ -267,24 +267,162 @@ class NumField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF8E8E93)
-                  : const Color(0xFF6E6E73),
-            )),
-        const SizedBox(height: 3),
-        TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-          decoration: InputDecoration(hintText: placeholder, hintStyle: const TextStyle(fontSize: 13)),
-          style: const TextStyle(fontSize: 13),
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final text = controller.text.trim();
+        final isInvalid = text.isNotEmpty && double.tryParse(text) == null;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF8E8E93)
+                      : const Color(0xFF6E6E73),
+                )),
+            const SizedBox(height: 3),
+            TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+              decoration: InputDecoration(
+                hintText: placeholder,
+                hintStyle: const TextStyle(fontSize: 13),
+                errorText: isInvalid ? 'Enter a valid number' : null,
+              ),
+              style: const TextStyle(fontSize: 13),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ─── Animation helpers ──────────────────────────────────────────────────────
+
+class FadeIn extends StatefulWidget {
+  final Widget child;
+  final Duration duration;
+  const FadeIn({super.key, required this.child, this.duration = const Duration(milliseconds: 280)});
+
+  @override
+  State<FadeIn> createState() => _FadeInState();
+}
+
+class _FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: widget.duration);
+    final curved = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _opacity = curved;
+    _slide = Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero).animate(curved);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+    opacity: _opacity,
+    child: SlideTransition(position: _slide, child: widget.child),
+  );
+}
+
+// ─── Skeleton / Shimmer ─────────────────────────────────────────────────────
+
+class SkeletonBox extends StatefulWidget {
+  final double? width;
+  final double height;
+  final double radius;
+  const SkeletonBox({super.key, this.width, required this.height, this.radius = 8});
+
+  @override
+  State<SkeletonBox> createState() => _SkeletonBoxState();
+}
+
+class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))
+      ..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA);
+    final shine = isDark ? const Color(0xFF48484A) : Colors.white;
+
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) => Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(widget.radius),
+          gradient: LinearGradient(
+            begin: const Alignment(-2, 0),
+            end: const Alignment(2, 0),
+            colors: [base, shine, base],
+            stops: [
+              (_ctrl.value - 0.35).clamp(0.0, 1.0),
+              _ctrl.value.clamp(0.0, 1.0),
+              (_ctrl.value + 0.35).clamp(0.0, 1.0),
+            ],
+          ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+// ─── Empty state ────────────────────────────────────────────────────────────
+
+class EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  const EmptyState({super.key, required this.icon, required this.title, this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(36),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, size: 52, color: const Color(0xFFBCBCC0)),
+          const SizedBox(height: 16),
+          Text(title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(subtitle!,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
+                textAlign: TextAlign.center),
+          ],
+        ]),
+      ),
     );
   }
 }

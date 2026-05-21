@@ -7,6 +7,7 @@ import '../assessment/assessment_screen.dart';
 import '../../services/patient_service.dart';
 import '../../services/session_service.dart';
 import '../../theme.dart';
+import '../../widgets/result_card.dart';
 import 'patient_form_screen.dart';
 import 'session_record_screen.dart';
 import 'session_detail_screen.dart';
@@ -40,7 +41,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   void _newSession() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => SessionRecordScreen(patientId: widget.patientId)),
+      appRoute(SessionRecordScreen(patientId: widget.patientId)),
     ).then((_) => _reload());
   }
 
@@ -60,26 +61,18 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 16),
-            _sheetTile(
-              ctx,
+            _sheetTile(ctx,
               icon: Icons.track_changes_outlined,
               title: 'Clinical assessment',
               subtitle: 'Guide which tests to run based on symptoms & cover test',
-              onTap: () {
-                Navigator.pop(ctx);
-                _startAssessment(patient);
-              },
+              onTap: () { Navigator.pop(ctx); _startAssessment(patient); },
             ),
             const SizedBox(height: 4),
-            _sheetTile(
-              ctx,
+            _sheetTile(ctx,
               icon: Icons.edit_note_outlined,
               title: 'Direct entry',
               subtitle: 'Open session form with all test sections',
-              onTap: () {
-                Navigator.pop(ctx);
-                _newSession();
-              },
+              onTap: () { Navigator.pop(ctx); _newSession(); },
             ),
             const SizedBox(height: 8),
           ]),
@@ -99,10 +92,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       leading: Container(
         width: 40, height: 40,
-        decoration: BoxDecoration(
-          color: kPrimary.withAlpha(20),
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: kPrimary.withAlpha(20), shape: BoxShape.circle),
         child: Icon(icon, size: 20, color: kPrimary),
       ),
       title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
@@ -114,7 +104,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   void _startAssessment(Patient patient) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => AssessmentScreen(patient: patient)),
+      appRoute(AssessmentScreen(patient: patient)),
     ).then((_) => _reload());
   }
 
@@ -135,7 +125,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => PatientFormScreen(patient: patient)),
+              appRoute(PatientFormScreen(patient: patient)),
             ),
           ),
           IconButton(
@@ -190,14 +180,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         future: _sessionsFuture,
         builder: (ctx, snap) {
           if (snap.connectionState == ConnectionState.waiting && !snap.hasData) {
-            return Container(
-              padding: const EdgeInsets.all(20),
-              decoration: _cardDecor(isDark),
-              child: const Center(
-                child: SizedBox(width: 20, height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2)),
-              ),
-            );
+            return _buildSessionSkeleton(isDark);
           }
           final sessions = snap.data ?? [];
           if (sessions.isEmpty) {
@@ -215,7 +198,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
             decoration: _cardDecor(isDark),
             child: Column(
               children: sessions.asMap().entries.map((e) {
-                return _sessionRow(e.value, isDark, e.key == sessions.length - 1);
+                return _sessionRow(e.value, isDark, e.key == sessions.length - 1, sessions);
               }).toList(),
             ),
           );
@@ -224,7 +207,35 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     ]);
   }
 
-  Widget _sessionRow(TestSession s, bool isDark, bool isLast) {
+  Widget _buildSessionSkeleton(bool isDark) {
+    return Container(
+      decoration: _cardDecor(isDark),
+      child: Column(
+        children: List.generate(3, (i) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              border: i < 2 ? Border(bottom: BorderSide(
+                color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
+                width: 0.5,
+              )) : null,
+            ),
+            child: Row(children: [
+              SkeletonBox(width: 36, height: 36, radius: 18),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                SkeletonBox(width: 110, height: 13),
+                const SizedBox(height: 6),
+                SkeletonBox(width: 160, height: 11),
+              ])),
+            ]),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _sessionRow(TestSession s, bool isDark, bool isLast, List<TestSession> all) {
     final sectionCount = [
       s.hasSection('ph_'),
       s.hasSection('npc_'),
@@ -233,47 +244,78 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       s.hasSection('dx_'),
     ].where((v) => v).length;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => SessionDetailScreen(session: s)),
-      ).then((_) => _reload()),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          border: isLast ? null : Border(bottom: BorderSide(
-            color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
-            width: 0.5,
-          )),
+    return Dismissible(
+      key: ValueKey(s.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) => showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Delete session?'),
+          content: Text('Remove the session from ${DateFormat('d MMM yyyy').format(s.date)}?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete', style: TextStyle(color: kBadText)),
+            ),
+          ],
         ),
-        child: Row(children: [
-          Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(
-              color: kPrimary.withAlpha(25),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.assignment_outlined, size: 18, color: kPrimary),
+      ),
+      onDismissed: (_) async {
+        await context.read<SessionService>().delete(s);
+        _reload();
+        if (mounted) showAppSnackBar(context, 'Session removed');
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: kBadBg,
+          borderRadius: isLast
+              ? const BorderRadius.vertical(bottom: Radius.circular(14))
+              : BorderRadius.zero,
+        ),
+        child: const Icon(Icons.delete_outline, color: kBadText, size: 22),
+      ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.push(
+          context,
+          appRoute(SessionDetailScreen(session: s)),
+        ).then((_) => _reload()),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            border: isLast ? null : Border(bottom: BorderSide(
+              color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
+              width: 0.5,
+            )),
           ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(DateFormat('d MMM yyyy').format(s.date),
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 2),
-            Text(
-              s.visitNote?.isNotEmpty == true
-                  ? s.visitNote!
-                  : '$sectionCount test section${sectionCount == 1 ? '' : 's'} recorded',
-              style: TextStyle(fontSize: 12,
-                  color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          child: Row(children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(color: kPrimary.withAlpha(25), shape: BoxShape.circle),
+              child: const Icon(Icons.assignment_outlined, size: 18, color: kPrimary),
             ),
-          ])),
-          Icon(Icons.chevron_right, size: 18,
-              color: isDark ? const Color(0xFF48484A) : const Color(0xFFCECED2)),
-        ]),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(DateFormat('d MMM yyyy').format(s.date),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 2),
+              Text(
+                s.visitNote?.isNotEmpty == true
+                    ? s.visitNote!
+                    : '$sectionCount test section${sectionCount == 1 ? '' : 's'} recorded',
+                style: TextStyle(fontSize: 12,
+                    color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ])),
+            Icon(Icons.chevron_right, size: 18,
+                color: isDark ? const Color(0xFF48484A) : const Color(0xFFCECED2)),
+          ]),
+        ),
       ),
     );
   }

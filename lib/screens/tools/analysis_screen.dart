@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/result_card.dart';
+import 'package:flutter/services.dart';
+import '../../widgets/result_card.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -8,15 +9,19 @@ class AnalysisScreen extends StatefulWidget {
 }
 
 class _AnalysisScreenState extends State<AnalysisScreen> {
+  final _scroll = ScrollController();
   final _shPh = TextEditingController();
   final _shCv = TextEditingController();
   final _pcBo = TextEditingController();
   final _pcBi = TextEditingController();
 
   _Res? _shResult, _pcResult;
+  int _shCalcCount = 0;
+  int _pcCalcCount = 0;
 
   @override
   void dispose() {
+    _scroll.dispose();
     for (final c in [_shPh, _shCv, _pcBo, _pcBi]) {
       c.dispose();
     }
@@ -25,29 +30,51 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   double? _v(TextEditingController c) => double.tryParse(c.text.trim());
 
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.animateTo(
+          _scroll.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 380),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
+  }
+
   void _calcSheards() {
+    HapticFeedback.lightImpact();
     final ph = _v(_shPh), cv = _v(_shCv);
     if (ph == null || cv == null) {
-      setState(() => _shResult = _Res(ResultType.warn, "Sheard's",
-          'Input required', 'Enter phoria and comp. vergence'));
+      setState(() {
+        _shResult = _Res(ResultType.warn, "Sheard's", 'Input required', 'Enter phoria and comp. vergence');
+        _shCalcCount++;
+      });
       return;
     }
     final a = ph.abs();
     final pass = cv >= 2 * a;
     final prism = ((2 * a - cv) / 3).clamp(0, double.infinity);
     final dir = ph >= 0 ? 'BI' : 'BO';
-    setState(() => _shResult = pass
-        ? _Res(ResultType.ok, "Sheard's", 'Passes ✓',
-            'CV (${cv.toStringAsFixed(0)}Δ) ≥ 2 × phoria (${a.toStringAsFixed(1)}Δ)')
-        : _Res(ResultType.bad, "Sheard's", 'Fails ✗',
-            'Prism needed: ${prism.toStringAsFixed(2)}Δ $dir'));
+    setState(() {
+      _shResult = pass
+          ? _Res(ResultType.ok, "Sheard's", 'Passes ✓',
+              'CV (${cv.toStringAsFixed(0)}Δ) ≥ 2 × phoria (${a.toStringAsFixed(1)}Δ)')
+          : _Res(ResultType.bad, "Sheard's", 'Fails ✗',
+              'Prism needed: ${prism.toStringAsFixed(2)}Δ $dir');
+      _shCalcCount++;
+    });
+    _scrollToBottom();
   }
 
   void _calcPercivals() {
+    HapticFeedback.lightImpact();
     final bo = _v(_pcBo), bi = _v(_pcBi);
     if (bo == null || bi == null) {
-      setState(() => _pcResult = _Res(ResultType.warn, "Percival's",
-          'Input required', 'Enter BO and BI values'));
+      setState(() {
+        _pcResult = _Res(ResultType.warn, "Percival's", 'Input required', 'Enter BO and BI values');
+        _pcCalcCount++;
+      });
       return;
     }
     final G = bo > bi ? bo : bi;
@@ -55,16 +82,21 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     final pass = L >= G / 2;
     final prism = (G / 3 - (2 * L) / 3).clamp(0, double.infinity);
     final dir = bo < bi ? 'BI' : 'BO';
-    setState(() => _pcResult = pass
-        ? _Res(ResultType.ok, "Percival's", 'Passes ✓',
-            'Lesser (${L.toStringAsFixed(0)}Δ) ≥ half of greater (${G.toStringAsFixed(0)}Δ)')
-        : _Res(ResultType.bad, "Percival's", 'Fails ✗',
-            'Prism needed: ${prism.toStringAsFixed(2)}Δ $dir'));
+    setState(() {
+      _pcResult = pass
+          ? _Res(ResultType.ok, "Percival's", 'Passes ✓',
+              'Lesser (${L.toStringAsFixed(0)}Δ) ≥ half of greater (${G.toStringAsFixed(0)}Δ)')
+          : _Res(ResultType.bad, "Percival's", 'Fails ✗',
+              'Prism needed: ${prism.toStringAsFixed(2)}Δ $dir');
+      _pcCalcCount++;
+    });
+    _scrollToBottom();
   }
 
   @override
   Widget build(BuildContext context) {
     return ListView(
+      controller: _scroll,
       padding: const EdgeInsets.all(12),
       children: [
         AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -76,11 +108,20 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           NumField(label: 'Phoria (Δ) — + exo, − eso', controller: _shPh, placeholder: 'e.g. 8', step: 0.5),
           const SizedBox(height: 8),
           NumField(label: 'Comp. vergence break (Δ)', controller: _shCv, placeholder: 'e.g. 12'),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           ElevatedButton(onPressed: _calcSheards, child: const Text("Apply Sheard's")),
-          if (_shResult != null)
-            ResultCard(type: _shResult!.type, label: _shResult!.label,
-                value: _shResult!.value, note: _shResult!.note),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _shResult == null
+                ? const SizedBox.shrink()
+                : FadeIn(
+                    key: ValueKey(_shCalcCount),
+                    child: ResultCard(
+                      type: _shResult!.type, label: _shResult!.label,
+                      value: _shResult!.value, note: _shResult!.note,
+                    ),
+                  ),
+          ),
         ])),
         AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const CardTitle(icon: Icons.horizontal_distribute, text: "Percival's criterion"),
@@ -93,12 +134,22 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             const SizedBox(width: 8),
             Expanded(child: NumField(label: 'BI blur/break (Δ)', controller: _pcBi, placeholder: '13')),
           ]),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           ElevatedButton(onPressed: _calcPercivals, child: const Text("Apply Percival's")),
-          if (_pcResult != null)
-            ResultCard(type: _pcResult!.type, label: _pcResult!.label,
-                value: _pcResult!.value, note: _pcResult!.note),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _pcResult == null
+                ? const SizedBox.shrink()
+                : FadeIn(
+                    key: ValueKey(_pcCalcCount),
+                    child: ResultCard(
+                      type: _pcResult!.type, label: _pcResult!.label,
+                      value: _pcResult!.value, note: _pcResult!.note,
+                    ),
+                  ),
+          ),
         ])),
+        const SizedBox(height: 20),
       ],
     );
   }

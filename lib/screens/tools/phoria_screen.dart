@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/result_card.dart';
+import 'package:flutter/services.dart';
+import '../../widgets/result_card.dart';
 
 class PhoriaScreen extends StatefulWidget {
   const PhoriaScreen({super.key});
@@ -8,6 +9,7 @@ class PhoriaScreen extends StatefulWidget {
 }
 
 class _PhoriaScreenState extends State<PhoriaScreen> {
+  final _scroll = ScrollController();
   final _pd = TextEditingController();
   final _pn = TextEditingController();
   final _ipd = TextEditingController();
@@ -19,9 +21,12 @@ class _PhoriaScreenState extends State<PhoriaScreen> {
   int _acaSeg = 0;
   List<_Result> _phoriaResults = [];
   _Result? _acaResult;
+  int _phoriaCalcCount = 0;
+  int _acaCalcCount = 0;
 
   @override
   void dispose() {
+    _scroll.dispose();
     for (final c in [_pd, _pn, _ipd, _ndist, _gp1, _gp2, _glens]) {
       c.dispose();
     }
@@ -30,7 +35,20 @@ class _PhoriaScreenState extends State<PhoriaScreen> {
 
   double? _v(TextEditingController c) => double.tryParse(c.text.trim());
 
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.animateTo(
+          _scroll.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 380),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
+  }
+
   void _calcPhoria() {
+    HapticFeedback.lightImpact();
     final results = <_Result>[];
     final pd = _v(_pd), pn = _v(_pn);
 
@@ -41,7 +59,7 @@ class _PhoriaScreenState extends State<PhoriaScreen> {
       final warn = a <= 4;
       final cls = pd == 0 || ok ? ResultType.ok : warn ? ResultType.warn : ResultType.bad;
       results.add(_Result(cls, 'Distance phoria', '${a.toStringAsFixed(1)}Δ  $type',
-          a <= 2 ? 'Within Morgan\'s norm' : 'Outside norm'));
+          a <= 2 ? "Within Morgan's norm" : 'Outside norm'));
     }
     if (pn != null) {
       final a = pn.abs();
@@ -54,24 +72,33 @@ class _PhoriaScreenState extends State<PhoriaScreen> {
     if (results.isEmpty) {
       results.add(_Result(ResultType.warn, 'Input required', 'Enter at least one phoria', ''));
     }
-    setState(() => _phoriaResults = results);
+    setState(() {
+      _phoriaResults = results;
+      _phoriaCalcCount++;
+    });
+    _scrollToBottom();
   }
 
   void _calcACA() {
+    HapticFeedback.lightImpact();
     double? ratio;
     if (_acaSeg == 0) {
       final ipd = _v(_ipd), pd = _v(_pd), pn = _v(_pn), nd = _v(_ndist);
       if (ipd == null || pd == null || pn == null || nd == null) {
-        setState(() => _acaResult = _Result(ResultType.warn, 'Missing',
-            'Enter IPD + both phorias', ''));
+        setState(() {
+          _acaResult = _Result(ResultType.warn, 'Missing', 'Enter IPD + both phorias', '');
+          _acaCalcCount++;
+        });
         return;
       }
       ratio = (ipd / 10) + (pn - pd) / (1 / (nd / 100));
     } else {
       final p1 = _v(_gp1), p2 = _v(_gp2), lens = _v(_glens);
       if (p1 == null || p2 == null || lens == null || lens == 0) {
-        setState(() => _acaResult = _Result(ResultType.warn, 'Missing',
-            'Enter phoria values and lens power', ''));
+        setState(() {
+          _acaResult = _Result(ResultType.warn, 'Missing', 'Enter phoria values and lens power', '');
+          _acaCalcCount++;
+        });
         return;
       }
       ratio = (p2 - p1).abs() / lens.abs();
@@ -95,13 +122,17 @@ class _PhoriaScreenState extends State<PhoriaScreen> {
             : ratio <= 7
                 ? 'Associated with CE pattern.'
                 : 'Evaluate for accommodative ET.';
-    setState(() => _acaResult =
-        _Result(cls, 'AC/A ratio', '${ratio!.toStringAsFixed(1)} : 1  $lbl', note));
+    setState(() {
+      _acaResult = _Result(cls, 'AC/A ratio', '${ratio!.toStringAsFixed(1)} : 1  $lbl', note);
+      _acaCalcCount++;
+    });
+    _scrollToBottom();
   }
 
   @override
   Widget build(BuildContext context) {
     return ListView(
+      controller: _scroll,
       padding: const EdgeInsets.all(12),
       children: [
         AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -115,9 +146,21 @@ class _PhoriaScreenState extends State<PhoriaScreen> {
             const SizedBox(width: 8),
             Expanded(child: NumField(label: 'Near (Δ)', controller: _pn, placeholder: 'e.g. 4', step: 0.5)),
           ]),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           ElevatedButton(onPressed: _calcPhoria, child: const Text('Calculate')),
-          ..._phoriaResults.map((r) => ResultCard(type: r.type, label: r.label, value: r.value, note: r.note)),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _phoriaResults.isEmpty
+                ? const SizedBox.shrink()
+                : FadeIn(
+                    key: ValueKey(_phoriaCalcCount),
+                    child: Column(
+                      children: _phoriaResults.map((r) => ResultCard(
+                        type: r.type, label: r.label, value: r.value, note: r.note,
+                      )).toList(),
+                    ),
+                  ),
+          ),
         ])),
         AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const CardTitle(icon: Icons.functions, text: 'AC/A ratio'),
@@ -145,14 +188,22 @@ class _PhoriaScreenState extends State<PhoriaScreen> {
             const SizedBox(height: 8),
           ],
           ElevatedButton(onPressed: _calcACA, child: const Text('Calculate AC/A')),
-          if (_acaResult != null)
-            ResultCard(
-              type: _acaResult!.type,
-              label: _acaResult!.label,
-              value: _acaResult!.value,
-              note: _acaResult!.note,
-            ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _acaResult == null
+                ? const SizedBox.shrink()
+                : FadeIn(
+                    key: ValueKey(_acaCalcCount),
+                    child: ResultCard(
+                      type: _acaResult!.type,
+                      label: _acaResult!.label,
+                      value: _acaResult!.value,
+                      note: _acaResult!.note,
+                    ),
+                  ),
+          ),
         ])),
+        const SizedBox(height: 20),
       ],
     );
   }

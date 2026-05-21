@@ -6,11 +6,11 @@ import 'services/auth_service.dart';
 import 'services/patient_service.dart';
 import 'services/session_service.dart';
 import 'screens/home_screen.dart';
-import 'screens/phoria_screen.dart';
-import 'screens/vergence_screen.dart';
-import 'screens/analysis_screen.dart';
-import 'screens/diagnosis_screen.dart';
-import 'screens/reference_screen.dart';
+import 'screens/tools/phoria_screen.dart';
+import 'screens/tools/vergence_screen.dart';
+import 'screens/tools/analysis_screen.dart';
+import 'screens/tools/diagnosis_screen.dart';
+import 'screens/tools/reference_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/auth/login_screen.dart';
 
@@ -91,10 +91,13 @@ class _MainShellState extends State<MainShell> {
     ('Reference', 'Norms & conditions'),
   ];
 
-  void _goTab(int tab) => setState(() => _tab = tab);
+  void _goTab(int tab) {
+    HapticFeedback.selectionClick();
+    setState(() => _tab = tab);
+  }
 
   void _openProfile() {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+    Navigator.push(context, appRoute(const ProfileScreen()));
   }
 
   @override
@@ -128,7 +131,7 @@ class _MainShellState extends State<MainShell> {
               width: 34,
               height: 34,
               margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: kPrimary,
                 shape: BoxShape.circle,
               ),
@@ -164,32 +167,32 @@ class _MainShellState extends State<MainShell> {
           const ReferenceScreen(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _tab < 5 ? _tab : 0,
-        onTap: _goTab,
-        items: const [
-          BottomNavigationBarItem(
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tab < 5 ? _tab : 0,
+        onDestinationSelected: _goTab,
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.remove_red_eye_outlined),
-            activeIcon: Icon(Icons.remove_red_eye),
+            selectedIcon: Icon(Icons.remove_red_eye),
             label: 'Phoria',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.compare_arrows),
             label: 'Vergence',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.balance_outlined),
-            activeIcon: Icon(Icons.balance),
+            selectedIcon: Icon(Icons.balance),
             label: 'Analysis',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.medical_services_outlined),
-            activeIcon: Icon(Icons.medical_services),
+            selectedIcon: Icon(Icons.medical_services),
             label: 'Diagnose',
           ),
         ],

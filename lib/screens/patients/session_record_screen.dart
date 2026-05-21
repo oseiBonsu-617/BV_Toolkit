@@ -30,7 +30,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
   final _phNear = TextEditingController();
 
   // AC/A
-  int _acaSeg = 0; // 0=calc 1=grad
+  int _acaSeg = 0;
   final _ipd = TextEditingController();
   final _ndist = TextEditingController(text: '40');
   final _gp1 = TextEditingController();
@@ -104,45 +104,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
   double? _v(TextEditingController c) => double.tryParse(c.text.trim());
   bool _hasAny(List<TextEditingController> cs) => cs.any((c) => c.text.trim().isNotEmpty);
 
-  // ─── Assessment helpers ────────────────────────────────────────────────────
-
   bool _isRec(RecommendedSection s) => widget.recommendations?.contains(s) ?? false;
-
-  Widget _recHeader(IconData icon, String label, RecommendedSection section) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(children: [
-        Icon(icon, size: 16, color: kPrimary),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-        ),
-        if (_isRec(section)) Pill.normal('Recommended'),
-      ]),
-    );
-  }
-
-  Widget _assessmentBanner(bool isDark) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: kPrimary.withAlpha(18),
-        border: Border.all(color: kPrimary.withAlpha(60), width: 0.5),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(children: [
-        const Icon(Icons.track_changes_outlined, size: 15, color: kPrimary),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            'Assessment: ${widget.assessmentImpression}',
-            style: const TextStyle(fontSize: 12, color: kPrimary, fontWeight: FontWeight.w500),
-          ),
-        ),
-      ]),
-    );
-  }
 
   // ─── Save ─────────────────────────────────────────────────────────────────
 
@@ -155,30 +117,22 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
 
   Future<void> _save() async {
     if (!_hasData) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter at least one test result before saving.')));
+      showAppSnackBar(context, 'Enter at least one test result before saving.', error: true);
       return;
     }
     setState(() => _saving = true);
     final data = <String, dynamic>{
-      // Phoria
       'ph_dist': _v(_phDist), 'ph_near': _v(_phNear),
-      // AC/A
       'aca_method': _acaSeg == 0 ? 'calc' : 'grad',
       'ipd': _v(_ipd), 'ndist': _v(_ndist),
       'gp1': _v(_gp1), 'gp2': _v(_gp2), 'glens': _v(_glens),
-      // NPC
       'npc_brk': _v(_nbrk), 'npc_rec': _v(_nrec),
-      // Vergence dist
       'bi_blur_d': _v(_biBlurD), 'bi_brk_d': _v(_biBrkD), 'bi_rec_d': _v(_biRecD),
       'bo_blur_d': _v(_boBlurD), 'bo_brk_d': _v(_boBrkD), 'bo_rec_d': _v(_boRecD),
-      // Vergence near
       'bi_blur_n': _v(_biBlurN), 'bi_brk_n': _v(_biBrkN), 'bi_rec_n': _v(_biRecN),
       'bo_blur_n': _v(_boBlurN), 'bo_brk_n': _v(_boBrkN), 'bo_rec_n': _v(_boRecN),
-      // Analysis
       'sh_ph': _v(_shPh), 'sh_cv': _v(_shCv),
       'pc_bo': _v(_pcBo), 'pc_bi': _v(_pcBi),
-      // Diagnosis
       'dx_pd': _v(_dxPd), 'dx_pn': _v(_dxPn), 'dx_aca': _v(_dxAca),
       'dx_nb': _v(_dxNb), 'dx_nr': _v(_dxNr),
       'dx_bi_blur': _v(_dxBiBlur), 'dx_bi_brk': _v(_dxBiBrk),
@@ -199,10 +153,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      if (mounted) showAppSnackBar(context, e.toString(), error: true);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -235,34 +186,135 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
             _assessmentBanner(isDark),
             const SizedBox(height: 6),
           ],
-          _visitCard(isDark),
-          const SizedBox(height: 10),
-          _phoriaCard(isDark),
-          const SizedBox(height: 10),
-          _acaCard(isDark),
-          const SizedBox(height: 10),
-          _npcCard(isDark),
-          const SizedBox(height: 10),
-          _vergenceCard(isDark, dist: true),
-          const SizedBox(height: 10),
-          _vergenceCard(isDark, dist: false),
-          const SizedBox(height: 10),
-          _sheardsCard(isDark),
-          const SizedBox(height: 10),
-          _percivsCard(isDark),
-          const SizedBox(height: 10),
-          _diagnosisCard(isDark),
+          _sectionTile(
+            icon: Icons.calendar_today_outlined,
+            title: 'Visit details',
+            initiallyExpanded: true,
+            child: _visitContent(isDark),
+          ),
+          _sectionTile(
+            icon: Icons.remove_red_eye_outlined,
+            title: 'Phoria',
+            section: RecommendedSection.phoria,
+            child: _phoriaContent(),
+          ),
+          _sectionTile(
+            icon: Icons.functions,
+            title: 'AC/A ratio',
+            section: RecommendedSection.acaRatio,
+            child: _acaContent(),
+          ),
+          _sectionTile(
+            icon: Icons.open_with,
+            title: 'NPC',
+            section: RecommendedSection.npc,
+            child: _npcContent(),
+          ),
+          _sectionTile(
+            icon: Icons.compare_arrows,
+            title: 'Vergence — Distance',
+            section: RecommendedSection.vergenceDistance,
+            child: _vergenceContent(dist: true),
+          ),
+          _sectionTile(
+            icon: Icons.compare_arrows,
+            title: 'Vergence — Near',
+            section: RecommendedSection.vergenceNear,
+            child: _vergenceContent(dist: false),
+          ),
+          _sectionTile(
+            icon: Icons.balance_outlined,
+            title: "Sheard's criterion",
+            section: RecommendedSection.analysis,
+            child: _sheardsContent(),
+          ),
+          _sectionTile(
+            icon: Icons.horizontal_distribute,
+            title: "Percival's criterion",
+            section: RecommendedSection.analysis,
+            child: _percivsContent(),
+          ),
+          _sectionTile(
+            icon: Icons.medical_services_outlined,
+            title: 'Diagnosis inputs',
+            section: RecommendedSection.diagnosis,
+            child: _diagnosisContent(isDark),
+          ),
           const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  // ─── Visit card ────────────────────────────────────────────────────────────
+  // ─── Section tile ──────────────────────────────────────────────────────────
 
-  Widget _visitCard(bool isDark) => AppCard(child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const CardTitle(icon: Icons.calendar_today_outlined, text: 'Visit details'),
+  Widget _sectionTile({
+    required IconData icon,
+    required String title,
+    required Widget child,
+    bool initiallyExpanded = false,
+    RecommendedSection? section,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isRec = section != null && _isRec(section);
+    final expanded = initiallyExpanded || isRec;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isRec ? kPrimary.withAlpha(100) : (isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA)),
+          width: isRec ? 1.0 : 0.5,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            initiallyExpanded: expanded,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+            childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            leading: Icon(icon, color: isRec ? kPrimary : const Color(0xFF8E8E93), size: 18),
+            title: Row(children: [
+              Expanded(child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+              if (isRec) ...[const SizedBox(width: 6), Pill.normal('Recommended')],
+            ]),
+            iconColor: kPrimary,
+            collapsedIconColor: const Color(0xFF8E8E93),
+            children: [child],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Section contents ──────────────────────────────────────────────────────
+
+  Widget _assessmentBanner(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: kPrimary.withAlpha(18),
+        border: Border.all(color: kPrimary.withAlpha(60), width: 0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(children: [
+        const Icon(Icons.track_changes_outlined, size: 15, color: kPrimary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            'Assessment: ${widget.assessmentImpression}',
+            style: const TextStyle(fontSize: 12, color: kPrimary, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _visitContent(bool isDark) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Date', style: _labelStyle()),
@@ -285,8 +337,8 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
           decoration: const InputDecoration(hintText: 'e.g. Follow-up, first visit…'),
         ),
       ]),
-    ],
-  ));
+    ]);
+  }
 
   Future<void> _pickDate() async {
     final d = await showDatePicker(
@@ -298,12 +350,9 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
     if (d != null) setState(() => _date = d);
   }
 
-  // ─── Phoria card ───────────────────────────────────────────────────────────
-
-  Widget _phoriaCard(bool isDark) {
+  Widget _phoriaContent() {
     final pd = _v(_phDist), pn = _v(_phNear);
-    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _recHeader(Icons.remove_red_eye_outlined, 'Phoria', RecommendedSection.phoria),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Expanded(child: NumField(label: 'Distance (Δ)', controller: _phDist,
             placeholder: 'e.g. 2', step: 0.5)),
@@ -313,7 +362,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       ]),
       if (pd != null) _phoriaResult(pd, 'Distance phoria'),
       if (pn != null) _phoriaResult(pn, 'Near phoria', near: true),
-    ]));
+    ]);
   }
 
   Widget _phoriaResult(double val, String label, {bool near = false}) {
@@ -327,9 +376,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
         note: a <= limit ? "Within Morgan's norm" : 'Outside norm');
   }
 
-  // ─── AC/A card ─────────────────────────────────────────────────────────────
-
-  Widget _acaCard(bool isDark) {
+  Widget _acaContent() {
     double? ratio;
     if (_acaSeg == 0) {
       final ipd = _v(_ipd), pd = _v(_phDist), pn = _v(_phNear), nd = _v(_ndist);
@@ -349,8 +396,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
         : ratio < 3 ? 'Low AC/A' : ratio <= 5 ? 'Normal AC/A'
         : ratio <= 7 ? 'High AC/A' : 'Very high AC/A';
 
-    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _recHeader(Icons.functions, 'AC/A ratio', RecommendedSection.acaRatio),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       SegmentedControl(
         labels: const ['Calculated', 'Gradient'],
         selected: _acaSeg,
@@ -381,12 +427,10 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
             note: ratio < 3 ? 'Associated with CI.'
                 : ratio <= 5 ? 'Normal range (3–5 Δ/D).'
                 : ratio <= 7 ? 'Associated with CE.' : 'Evaluate for accommodative ET.'),
-    ]));
+    ]);
   }
 
-  // ─── NPC card ──────────────────────────────────────────────────────────────
-
-  Widget _npcCard(bool isDark) {
+  Widget _npcContent() {
     final b = _v(_nbrk), r = _v(_nrec);
     ResultType? cls; String? lbl;
     if (b != null && r != null) {
@@ -394,8 +438,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       cls = (bOk && rOk) ? ResultType.ok : (!bOk && !rOk) ? ResultType.bad : ResultType.warn;
       lbl = (bOk && rOk) ? 'Normal NPC' : (!bOk && !rOk) ? 'Receded NPC' : 'Borderline NPC';
     }
-    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _recHeader(Icons.open_with, 'NPC', RecommendedSection.npc),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       InfoBox(child: const Text('Norms: break ≤ 5 cm, recovery ≤ 7 cm')),
       Row(children: [
         Expanded(child: NumField(label: 'Break (cm)', controller: _nbrk,
@@ -407,12 +450,11 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       if (cls != null && lbl != null)
         ResultCard(type: cls, label: 'NPC status', value: lbl,
             note: 'Break ${b!.toStringAsFixed(1)} cm / Recovery ${r!.toStringAsFixed(1)} cm'),
-    ]));
+    ]);
   }
 
-  // ─── Vergence card ─────────────────────────────────────────────────────────
-
-  Widget _vergenceCard(bool isDark, {required bool dist}) {
+  Widget _vergenceContent({required bool dist}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final norms = dist
         ? {'bi_brk': 7.0, 'bi_rec': 4.0, 'bo_blur': 9.0, 'bo_brk': 19.0, 'bo_rec': 10.0}
         : {'bi_blur': 13.0, 'bi_brk': 21.0, 'bi_rec': 13.0, 'bo_blur': 17.0, 'bo_brk': 21.0, 'bo_rec': 11.0};
@@ -422,11 +464,9 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
     final boBlur = dist ? _boBlurD : _boBlurN;
     final boBrk = dist ? _boBrkD : _boBrkN;
     final boRec = dist ? _boRecD : _boRecN;
-    final label = dist ? 'Vergence — Distance' : 'Vergence — Near';
-    final sfx = dist ? 'd' : 'n';
 
     final fields = [
-      _VF('BI blur', biBlur, norms['bi_blur_$sfx'] ?? norms['bi_blur']),
+      _VF('BI blur', biBlur, norms['bi_blur']),
       _VF('BI break', biBrk, norms['bi_brk']),
       _VF('BI recovery', biRec, norms['bi_rec']),
       _VF('BO blur', boBlur, norms['bo_blur']),
@@ -434,8 +474,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       _VF('BO recovery', boRec, norms['bo_rec']),
     ].where((f) => _v(f.ctrl) != null).toList();
 
-    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _recHeader(Icons.compare_arrows, label, dist ? RecommendedSection.vergenceDistance : RecommendedSection.vergenceNear),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       SectionLabel('Base-In'),
       Row(children: [
         Expanded(child: NumField(label: 'Blur (Δ)', controller: biBlur,
@@ -462,7 +501,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
         const SizedBox(height: 8),
         _vergRows(fields, isDark),
       ],
-    ]));
+    ]);
   }
 
   Widget _vergRows(List<_VF> fields, bool isDark) {
@@ -517,9 +556,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
     );
   }
 
-  // ─── Sheard's card ─────────────────────────────────────────────────────────
-
-  Widget _sheardsCard(bool isDark) {
+  Widget _sheardsContent() {
     final ph = _v(_shPh), cv = _v(_shCv);
     Widget? result;
     if (ph != null && cv != null) {
@@ -536,8 +573,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
             : 'Prism needed: ${prism.toStringAsFixed(2)}Δ $dir',
       );
     }
-    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _recHeader(Icons.balance_outlined, "Sheard's criterion", RecommendedSection.analysis),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       InfoBox(child: const Text.rich(TextSpan(children: [
         TextSpan(text: 'Passes if: ', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.black87)),
         TextSpan(text: 'comp. vergence ≥ 2 × phoria'),
@@ -547,12 +583,10 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       const SizedBox(height: 8),
       NumField(label: 'Comp. vergence break (Δ)', controller: _shCv, placeholder: 'e.g. 12'),
       ?result,
-    ]));
+    ]);
   }
 
-  // ─── Percival's card ───────────────────────────────────────────────────────
-
-  Widget _percivsCard(bool isDark) {
+  Widget _percivsContent() {
     final bo = _v(_pcBo), bi = _v(_pcBi);
     Widget? result;
     if (bo != null && bi != null) {
@@ -569,8 +603,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
             : 'Prism needed: ${prism.toStringAsFixed(2)}Δ $dir',
       );
     }
-    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _recHeader(Icons.horizontal_distribute, "Percival's criterion", RecommendedSection.analysis),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       InfoBox(child: const Text.rich(TextSpan(children: [
         TextSpan(text: 'Passes if: ', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.black87)),
         TextSpan(text: 'lesser ≥ ½ × greater vergence'),
@@ -581,15 +614,13 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
         Expanded(child: NumField(label: 'BI blur/break (Δ)', controller: _pcBi, placeholder: '13')),
       ]),
       ?result,
-    ]));
+    ]);
   }
 
-  // ─── Diagnosis card ────────────────────────────────────────────────────────
-
-  Widget _diagnosisCard(bool isDark) {
-    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _recHeader(Icons.medical_services_outlined, 'Diagnosis inputs', RecommendedSection.diagnosis),
-      InfoBox(child: const Text('Fill in to record diagnosis. Tap ▶ to compute.')),
+  Widget _diagnosisContent(bool isDark) {
+    const opts = [('', '—'), ('minus', 'Fails −'), ('plus', 'Fails +'), ('both', 'Fails ±'), ('neither', 'Normal')];
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      InfoBox(child: const Text('Fill in to record diagnosis inputs for this session.')),
       Row(children: [
         Expanded(child: NumField(label: 'Dist phoria (Δ)', controller: _dxPd,
             placeholder: 'e.g. 2', step: 0.5)),
@@ -622,20 +653,11 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       ]),
       const SizedBox(height: 8),
       Row(children: [
-        Expanded(child: NumField(label: 'BI break (Δ)', controller: _dxBiBrk,
-            placeholder: '7')),
+        Expanded(child: NumField(label: 'BI break (Δ)', controller: _dxBiBrk, placeholder: '7')),
         const SizedBox(width: 8),
-        Expanded(child: NumField(label: 'BO break (Δ)', controller: _dxBoBrk,
-            placeholder: '19')),
+        Expanded(child: NumField(label: 'BO break (Δ)', controller: _dxBoBrk, placeholder: '19')),
       ]),
-      const SizedBox(height: 8),
-      _dxFailPicker(isDark),
-    ]));
-  }
-
-  Widget _dxFailPicker(bool isDark) {
-    const opts = [('', '—'), ('minus', 'Fails −'), ('plus', 'Fails +'), ('both', 'Fails ±'), ('neither', 'Normal')];
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const SizedBox(height: 10),
       Text('Flipper fail side', style: _labelStyle()),
       const SizedBox(height: 6),
       Wrap(spacing: 8, runSpacing: 6, children: opts.map((o) {

@@ -44,29 +44,96 @@ ThemeData buildTheme(Brightness brightness) {
         color: isDark ? Colors.white : Colors.black,
       ),
     ),
-    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+    navigationBarTheme: NavigationBarThemeData(
       backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-      selectedItemColor: kPrimary,
-      unselectedItemColor: isDark ? const Color(0xFF8E8E93) : const Color(0xFF8E8E93),
-      selectedLabelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-      unselectedLabelStyle: const TextStyle(fontSize: 10),
-      type: BottomNavigationBarType.fixed,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: isDark ? Colors.black26 : Colors.black12,
+      elevation: 8,
+      indicatorColor: kPrimary.withAlpha(30),
+      indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return const IconThemeData(color: kPrimary, size: 22);
+        }
+        return IconThemeData(
+          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
+          size: 22,
+        );
+      }),
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: kPrimary);
+        }
+        return const TextStyle(fontSize: 10, color: Color(0xFF8E8E93));
+      }),
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F7),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: kPrimary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: kBadText, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: kBadText, width: 1.5),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       labelStyle: TextStyle(fontSize: 12, color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73)),
+      errorStyle: const TextStyle(fontSize: 10, color: kBadText),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: kPrimary,
         foregroundColor: Colors.white,
-        minimumSize: const Size(double.infinity, 44),
+        minimumSize: const Size(double.infinity, 46),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+        elevation: 0,
       ),
     ),
   );
+}
+
+// ─── Page route with slide + fade transition ────────────────────────────────
+
+Route<T> appRoute<T>(Widget page) => PageRouteBuilder<T>(
+  pageBuilder: (_, animation, __) => page,
+  transitionsBuilder: (_, animation, __, child) {
+    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0.04, 0),
+        end: Offset.zero,
+      ).animate(curved),
+      child: FadeTransition(
+        opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),
+        child: child,
+      ),
+    );
+  },
+  transitionDuration: const Duration(milliseconds: 260),
+  reverseTransitionDuration: const Duration(milliseconds: 220),
+);
+
+// ─── Styled SnackBar helper ─────────────────────────────────────────────────
+
+void showAppSnackBar(BuildContext context, String message, {bool error = false}) {
+  ScaffoldMessenger.of(context)
+    ..clearSnackBars()
+    ..showSnackBar(SnackBar(
+      content: Text(message, style: const TextStyle(fontSize: 13)),
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: error ? kBadText : const Color(0xFF1C1C1E),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      duration: const Duration(seconds: 2),
+    ));
 }

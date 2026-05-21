@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../theme.dart';
-import '../widgets/result_card.dart';
+import 'package:flutter/services.dart';
+import '../../theme.dart';
+import '../../widgets/result_card.dart';
 
 class DiagnosisScreen extends StatefulWidget {
   const DiagnosisScreen({super.key});
@@ -9,6 +10,7 @@ class DiagnosisScreen extends StatefulWidget {
 }
 
 class _DiagnosisScreenState extends State<DiagnosisScreen> {
+  final _scroll = ScrollController();
   final _pd = TextEditingController();
   final _pn = TextEditingController();
   final _aca = TextEditingController();
@@ -30,6 +32,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
   String _facFail = '';
   List<_Diagnosis> _results = [];
   bool _noData = false;
+  int _calcCount = 0;
 
   static const _failOptions = [
     ('', '— not tested —'),
@@ -41,6 +44,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
 
   @override
   void dispose() {
+    _scroll.dispose();
     for (final c in [_pd, _pn, _aca, _nb, _nr, _biBrk, _biBlur, _boBrk, _boBlur,
         _cv, _lv, _gv, _age, _amp, _facBin, _facMon, _mem]) {
       c.dispose();
@@ -50,7 +54,20 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
 
   double? _v(TextEditingController c) => double.tryParse(c.text.trim());
 
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.animateTo(
+          _scroll.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
+  }
+
   void _runDiagnosis() {
+    HapticFeedback.mediumImpact();
     final pd = _v(_pd), pn = _v(_pn), aca = _v(_aca);
     final nb = _v(_nb), nr = _v(_nr);
     final biBrk = _v(_biBrk), boBrk = _v(_boBrk);
@@ -62,7 +79,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
     final hasAcc = amp != null || facBin != null || facMon != null || _facFail != '';
 
     if (!hasPd && !hasPn && !hasAcc) {
-      setState(() { _results = []; _noData = true; });
+      setState(() { _results = []; _noData = true; _calcCount++; });
       return;
     }
 
@@ -185,96 +202,169 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
     }
 
     conds.sort((a, b) => b.score.compareTo(a.score));
-    setState(() { _results = conds; _noData = false; });
+    setState(() { _results = conds; _noData = false; _calcCount++; });
+    _scrollToBottom();
   }
+
+  // ─── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return ListView(
+      controller: _scroll,
       padding: const EdgeInsets.all(12),
       children: [
         InfoBox(child: const Text.rich(TextSpan(children: [
           TextSpan(text: 'Enter findings. ', style: TextStyle(fontWeight: FontWeight.w500, color: Colors.black87)),
-          TextSpan(text: 'Leave blank if not tested.'),
+          TextSpan(text: 'Leave blank if not tested. Expand sections as needed.'),
         ]))),
-        _buildInputSection(),
-        ElevatedButton(onPressed: _runDiagnosis, child: const Text('Run diagnosis')),
+        _diagSection(
+          icon: Icons.remove_red_eye_outlined,
+          title: 'Phoria',
+          initiallyExpanded: true,
+          children: [
+            Row(children: [
+              Expanded(child: NumField(label: 'Distance (Δ)', controller: _pd, placeholder: 'e.g. 2', step: 0.5)),
+              const SizedBox(width: 8),
+              Expanded(child: NumField(label: 'Near (Δ)', controller: _pn, placeholder: 'e.g. 8', step: 0.5)),
+            ]),
+          ],
+        ),
+        _diagSection(
+          icon: Icons.functions,
+          title: 'AC/A',
+          children: [
+            NumField(label: 'AC/A ratio (Δ/D)', controller: _aca, placeholder: 'e.g. 4', step: 0.5),
+          ],
+        ),
+        _diagSection(
+          icon: Icons.open_with,
+          title: 'NPC',
+          children: [
+            Row(children: [
+              Expanded(child: NumField(label: 'Break (cm)', controller: _nb, placeholder: '5', step: 0.5)),
+              const SizedBox(width: 8),
+              Expanded(child: NumField(label: 'Recovery (cm)', controller: _nr, placeholder: '7', step: 0.5)),
+            ]),
+          ],
+        ),
+        _diagSection(
+          icon: Icons.compare_arrows,
+          title: 'Vergence',
+          children: [
+            const SectionLabel('Base-In'),
+            Row(children: [
+              Expanded(child: NumField(label: 'Blur (Δ)', controller: _biBlur, placeholder: '—')),
+              const SizedBox(width: 8),
+              Expanded(child: NumField(label: 'Break (Δ)', controller: _biBrk, placeholder: '7')),
+            ]),
+            const SectionLabel('Base-Out'),
+            Row(children: [
+              Expanded(child: NumField(label: 'Blur (Δ)', controller: _boBlur, placeholder: '9')),
+              const SizedBox(width: 8),
+              Expanded(child: NumField(label: 'Break (Δ)', controller: _boBrk, placeholder: '19')),
+            ]),
+          ],
+        ),
+        _diagSection(
+          icon: Icons.balance_outlined,
+          title: "Sheard's & Percival's",
+          children: [
+            Row(children: [
+              Expanded(child: NumField(label: 'Comp. vergence (Δ)', controller: _cv, placeholder: '12')),
+              const SizedBox(width: 8),
+              Expanded(child: NumField(label: 'Lesser vergence (Δ)', controller: _lv, placeholder: '8')),
+            ]),
+            const SizedBox(height: 8),
+            NumField(label: 'Greater vergence (Δ)', controller: _gv, placeholder: '19'),
+          ],
+        ),
+        _diagSection(
+          icon: Icons.zoom_in,
+          title: 'Accommodative',
+          children: [
+            Row(children: [
+              Expanded(child: NumField(label: 'Age (yrs)', controller: _age, placeholder: '25')),
+              const SizedBox(width: 8),
+              Expanded(child: NumField(label: 'Amplitude (D)', controller: _amp, placeholder: '8', step: 0.25)),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: NumField(label: 'Bino. facility (cpm)', controller: _facBin, placeholder: '≥11')),
+              const SizedBox(width: 8),
+              Expanded(child: NumField(label: 'Mono. facility (cpm)', controller: _facMon, placeholder: '≥13')),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: _buildFailSelect(context)),
+              const SizedBox(width: 8),
+              Expanded(child: NumField(label: 'MEM lag (D)', controller: _mem, placeholder: '0.25–0.75', step: 0.25)),
+            ]),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ElevatedButton.icon(
+          onPressed: _runDiagnosis,
+          icon: const Icon(Icons.play_arrow_rounded, size: 20),
+          label: const Text('Run diagnosis'),
+        ),
         const SizedBox(height: 12),
-        if (_noData) _warningBox('No findings.', 'Enter at least phoria or accommodative test results.'),
-        if (_results.isEmpty && !_noData) const SizedBox.shrink(),
-        ..._results.asMap().entries.map((e) => _buildDiagCard(e.key, e.value, context)),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _buildResults(),
+        ),
+        const SizedBox(height: 20),
       ],
     );
   }
 
-  Widget _buildInputSection() {
-    return Column(children: [
-      AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const CardTitle(icon: Icons.remove_red_eye_outlined, text: 'Phoria'),
-        Row(children: [
-          Expanded(child: NumField(label: 'Distance (Δ)', controller: _pd, placeholder: 'e.g. 2', step: 0.5)),
-          const SizedBox(width: 8),
-          Expanded(child: NumField(label: 'Near (Δ)', controller: _pn, placeholder: 'e.g. 8', step: 0.5)),
-        ]),
-      ])),
-      AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const CardTitle(icon: Icons.functions, text: 'AC/A'),
-        NumField(label: 'AC/A ratio (Δ/D)', controller: _aca, placeholder: 'e.g. 4', step: 0.5),
-      ])),
-      AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const CardTitle(icon: Icons.open_with, text: 'NPC'),
-        Row(children: [
-          Expanded(child: NumField(label: 'Break (cm)', controller: _nb, placeholder: '5', step: 0.5)),
-          const SizedBox(width: 8),
-          Expanded(child: NumField(label: 'Recovery (cm)', controller: _nr, placeholder: '7', step: 0.5)),
-        ]),
-      ])),
-      AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const CardTitle(icon: Icons.compare_arrows, text: 'Vergence'),
-        const SectionLabel('Base-In'),
-        Row(children: [
-          Expanded(child: NumField(label: 'Blur (Δ)', controller: _biBlur, placeholder: '—')),
-          const SizedBox(width: 8),
-          Expanded(child: NumField(label: 'Break (Δ)', controller: _biBrk, placeholder: '7')),
-        ]),
-        const SectionLabel('Base-Out'),
-        Row(children: [
-          Expanded(child: NumField(label: 'Blur (Δ)', controller: _boBlur, placeholder: '9')),
-          const SizedBox(width: 8),
-          Expanded(child: NumField(label: 'Break (Δ)', controller: _boBrk, placeholder: '19')),
-        ]),
-      ])),
-      AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const CardTitle(icon: Icons.balance_outlined, text: "Sheard's & Percival's"),
-        Row(children: [
-          Expanded(child: NumField(label: 'Comp. vergence (Δ)', controller: _cv, placeholder: '12')),
-          const SizedBox(width: 8),
-          Expanded(child: NumField(label: 'Lesser vergence (Δ)', controller: _lv, placeholder: '8')),
-        ]),
-        const SizedBox(height: 8),
-        NumField(label: 'Greater vergence (Δ)', controller: _gv, placeholder: '19'),
-      ])),
-      AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const CardTitle(icon: Icons.zoom_in, text: 'Accommodative'),
-        Row(children: [
-          Expanded(child: NumField(label: 'Age (yrs)', controller: _age, placeholder: '25')),
-          const SizedBox(width: 8),
-          Expanded(child: NumField(label: 'Amplitude (D)', controller: _amp, placeholder: '8', step: 0.25)),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: NumField(label: 'Bino. facility (cpm)', controller: _facBin, placeholder: '≥11')),
-          const SizedBox(width: 8),
-          Expanded(child: NumField(label: 'Mono. facility (cpm)', controller: _facMon, placeholder: '≥13')),
-        ]),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: _buildFailSelect(context)),
-          const SizedBox(width: 8),
-          Expanded(child: NumField(label: 'MEM lag (D)', controller: _mem, placeholder: '0.25–0.75', step: 0.25)),
-        ]),
-      ])),
-    ]);
+  Widget _buildResults() {
+    if (!_noData && _results.isEmpty) return const SizedBox.shrink();
+    return FadeIn(
+      key: ValueKey(_calcCount),
+      child: Column(
+        children: [
+          if (_noData) _warningBox('No findings.', 'Enter at least phoria or accommodative test results.'),
+          ..._results.asMap().entries.map((e) => _buildDiagCard(e.key, e.value, context)),
+        ],
+      ),
+    );
+  }
+
+  Widget _diagSection({
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+    bool initiallyExpanded = false,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
+          width: 0.5,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            initiallyExpanded: initiallyExpanded,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+            childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            leading: Icon(icon, color: kPrimary, size: 18),
+            title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            iconColor: kPrimary,
+            collapsedIconColor: const Color(0xFF8E8E93),
+            children: children,
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildFailSelect(BuildContext context) {
@@ -297,10 +387,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
             child: DropdownButton<String>(
               value: _facFail,
               isExpanded: true,
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark ? Colors.white : Colors.black,
-              ),
+              style: TextStyle(fontSize: 13, color: isDark ? Colors.white : Colors.black),
               dropdownColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
               items: _failOptions.map((opt) => DropdownMenuItem(
                 value: opt.$1,
@@ -342,28 +429,21 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
         children: [
           Text(isPrimary ? 'Most likely' : 'Differential $index',
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.5,
-                textBaseline: TextBaseline.alphabetic,
+                fontSize: 10, fontWeight: FontWeight.w500, letterSpacing: 0.5,
                 color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
               )),
           const SizedBox(height: 3),
-          Row(
-            children: [
-              Flexible(child: Text(d.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
-              const SizedBox(width: 6),
-              confBadge,
-            ],
-          ),
+          Row(children: [
+            Flexible(child: Text(d.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+            const SizedBox(width: 6),
+            confBadge,
+          ]),
           const SizedBox(height: 6),
-          Wrap(spacing: 4, runSpacing: 4,
-              children: d.met.map((x) => Pill.normal(x)).toList()),
+          Wrap(spacing: 4, runSpacing: 4, children: d.met.map((x) => Pill.normal(x)).toList()),
           if (d.missing.isNotEmpty) ...[
             const SizedBox(height: 6),
             Wrap(
-              spacing: 4,
-              runSpacing: 4,
+              spacing: 4, runSpacing: 4,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text('Not confirmed:', style: TextStyle(
@@ -387,8 +467,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
               const TextSpan(text: 'Management: ', style: TextStyle(fontWeight: FontWeight.w500)),
               TextSpan(text: d.management),
             ]), style: TextStyle(
-              fontSize: 11,
-              height: 1.5,
+              fontSize: 11, height: 1.5,
               color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
             )),
           ),
