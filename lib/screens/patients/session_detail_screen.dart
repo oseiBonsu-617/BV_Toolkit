@@ -1,0 +1,380 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../models/test_session.dart';
+import '../../services/session_service.dart';
+import '../../theme.dart';
+import '../../widgets/result_card.dart';
+
+class SessionDetailScreen extends StatelessWidget {
+  final TestSession session;
+  const SessionDetailScreen({super.key, required this.session});
+
+  double? _n(String key) => session.numVal(key);
+  bool _has(List<String> keys) => keys.any((k) => session.data.containsKey(k));
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF2F2F7),
+      appBar: AppBar(
+        title: Text(DateFormat('d MMM yyyy').format(session.date)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: kBadText),
+            onPressed: () => _confirmDelete(context),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(14),
+        children: [
+          if (session.visitNote != null) ...[
+            _noteCard(isDark),
+            const SizedBox(height: 10),
+          ],
+          if (_has(['ph_dist', 'ph_near'])) ...[
+            _phoriaCard(isDark),
+            const SizedBox(height: 10),
+          ],
+          if (_has(['ipd', 'gp1'])) ...[
+            _acaCard(isDark),
+            const SizedBox(height: 10),
+          ],
+          if (_has(['npc_brk', 'npc_rec'])) ...[
+            _npcCard(isDark),
+            const SizedBox(height: 10),
+          ],
+          if (_has(['bi_blur_d', 'bi_brk_d', 'bi_rec_d', 'bo_blur_d', 'bo_brk_d', 'bo_rec_d'])) ...[
+            _vergenceCard(isDark, dist: true),
+            const SizedBox(height: 10),
+          ],
+          if (_has(['bi_blur_n', 'bi_brk_n', 'bi_rec_n', 'bo_blur_n', 'bo_brk_n', 'bo_rec_n'])) ...[
+            _vergenceCard(isDark, dist: false),
+            const SizedBox(height: 10),
+          ],
+          if (_has(['sh_ph', 'sh_cv'])) ...[
+            _sheardsCard(isDark),
+            const SizedBox(height: 10),
+          ],
+          if (_has(['pc_bo', 'pc_bi'])) ...[
+            _percivsCard(isDark),
+            const SizedBox(height: 10),
+          ],
+          if (_has(['dx_pd', 'dx_pn', 'dx_aca', 'dx_nb', 'dx_age', 'dx_amp',
+                     'dx_fac_bin', 'dx_mem', 'dx_bi_brk', 'dx_bo_brk', 'dx_fac_fail'])) ...[
+            _diagnosisCard(isDark),
+            const SizedBox(height: 10),
+          ],
+          const SizedBox(height: 14),
+        ],
+      ),
+    );
+  }
+
+  // ─── Note ──────────────────────────────────────────────────────────────────
+
+  Widget _noteCard(bool isDark) => AppCard(child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const CardTitle(icon: Icons.notes_outlined, text: 'Visit note'),
+      Text(session.visitNote!, style: const TextStyle(fontSize: 14, height: 1.5)),
+    ],
+  ));
+
+  // ─── Phoria ────────────────────────────────────────────────────────────────
+
+  Widget _phoriaCard(bool isDark) {
+    final pd = _n('ph_dist'), pn = _n('ph_near');
+    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const CardTitle(icon: Icons.remove_red_eye_outlined, text: 'Phoria'),
+      if (pd != null) _phoriaResult(pd, 'Distance phoria'),
+      if (pn != null) _phoriaResult(pn, 'Near phoria', near: true),
+    ]));
+  }
+
+  Widget _phoriaResult(double val, String label, {bool near = false}) {
+    final a = val.abs();
+    final type = val == 0 ? 'Orthophoria' : val > 0 ? 'Exophoria' : 'Esophoria';
+    final limit = near && val > 0 ? 6.0 : 2.0;
+    final cls = a == 0 || a <= limit ? ResultType.ok
+        : a <= (near ? 10 : 4) ? ResultType.warn : ResultType.bad;
+    return ResultCard(
+      type: cls,
+      label: label,
+      value: '${a.toStringAsFixed(1)}Δ  $type',
+      note: a <= limit ? "Within Morgan's norm" : 'Outside norm',
+    );
+  }
+
+  // ─── AC/A ──────────────────────────────────────────────────────────────────
+
+  Widget _acaCard(bool isDark) {
+    final method = session.str('aca_method') ?? 'calc';
+    double? ratio;
+    if (method == 'calc') {
+      final ipd = _n('ipd'), pd = _n('ph_dist'), pn = _n('ph_near'), nd = _n('ndist');
+      if (ipd != null && pd != null && pn != null && nd != null) {
+        ratio = (ipd / 10) + (pn - pd) / (1 / (nd / 100));
+      }
+    } else {
+      final p1 = _n('gp1'), p2 = _n('gp2'), lens = _n('glens');
+      if (p1 != null && p2 != null && lens != null && lens != 0) {
+        ratio = (p2 - p1).abs() / lens.abs();
+      }
+    }
+    final cls = ratio == null ? null
+        : ratio < 3 || ratio > 7 ? ResultType.bad
+        : ratio <= 5 ? ResultType.ok : ResultType.warn;
+    final lbl = ratio == null ? null
+        : ratio < 3 ? 'Low AC/A' : ratio <= 5 ? 'Normal AC/A'
+        : ratio <= 7 ? 'High AC/A' : 'Very high AC/A';
+
+    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const CardTitle(icon: Icons.functions, text: 'AC/A ratio'),
+      _dataRow(isDark, 'Method', method == 'calc' ? 'Calculated' : 'Gradient'),
+      if (_n('ipd') != null) _dataRow(isDark, 'IPD', '${_n('ipd')!.toStringAsFixed(0)} mm'),
+      if (_n('ndist') != null) _dataRow(isDark, 'Near dist', '${_n('ndist')!.toStringAsFixed(0)} cm'),
+      if (_n('gp1') != null) _dataRow(isDark, 'Phoria habitual', '${_n('gp1')!.toStringAsFixed(1)}Δ'),
+      if (_n('gp2') != null) _dataRow(isDark, 'Phoria + lens', '${_n('gp2')!.toStringAsFixed(1)}Δ'),
+      if (_n('glens') != null) _dataRow(isDark, 'Lens power', '${_n('glens')!.toStringAsFixed(2)} D'),
+      if (ratio != null && cls != null && lbl != null)
+        ResultCard(
+          type: cls,
+          label: 'AC/A ratio',
+          value: '${ratio.toStringAsFixed(1)} : 1  $lbl',
+          note: ratio < 3 ? 'Associated with CI.'
+              : ratio <= 5 ? 'Normal range (3–5 Δ/D).'
+              : ratio <= 7 ? 'Associated with CE.' : 'Evaluate for accommodative ET.',
+        ),
+    ]));
+  }
+
+  // ─── NPC ───────────────────────────────────────────────────────────────────
+
+  Widget _npcCard(bool isDark) {
+    final b = _n('npc_brk'), r = _n('npc_rec');
+    ResultType? cls; String? lbl;
+    if (b != null && r != null) {
+      final bOk = b <= 5, rOk = r <= 7;
+      cls = (bOk && rOk) ? ResultType.ok : (!bOk && !rOk) ? ResultType.bad : ResultType.warn;
+      lbl = (bOk && rOk) ? 'Normal NPC' : (!bOk && !rOk) ? 'Receded NPC' : 'Borderline NPC';
+    }
+    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const CardTitle(icon: Icons.open_with, text: 'NPC'),
+      if (b != null) _dataRow(isDark, 'Break', '${b.toStringAsFixed(1)} cm'),
+      if (r != null) _dataRow(isDark, 'Recovery', '${r.toStringAsFixed(1)} cm'),
+      if (cls != null && lbl != null)
+        ResultCard(
+          type: cls,
+          label: 'NPC status',
+          value: lbl,
+          note: 'Break ${b!.toStringAsFixed(1)} cm / Recovery ${r!.toStringAsFixed(1)} cm',
+        ),
+    ]));
+  }
+
+  // ─── Vergence ──────────────────────────────────────────────────────────────
+
+  Widget _vergenceCard(bool isDark, {required bool dist}) {
+    final sfx = dist ? 'd' : 'n';
+    final label = dist ? 'Vergence — Distance' : 'Vergence — Near';
+    final normMap = dist
+        ? <String, double?>{'bi_blur': null, 'bi_brk': 7, 'bi_rec': 4, 'bo_blur': 9, 'bo_brk': 19, 'bo_rec': 10}
+        : <String, double?>{'bi_blur': 13, 'bi_brk': 21, 'bi_rec': 13, 'bo_blur': 17, 'bo_brk': 21, 'bo_rec': 11};
+
+    final rows = <_VD>[];
+    for (final entry in normMap.entries) {
+      final v = _n('${entry.key}_$sfx');
+      if (v != null) rows.add(_VD(_vergLabel(entry.key), v, entry.value));
+    }
+
+    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      CardTitle(icon: Icons.compare_arrows, text: label),
+      ...rows.asMap().entries.map((e) => _vergRow(isDark, e.value, e.key == rows.length - 1)),
+    ]));
+  }
+
+  String _vergLabel(String key) => switch (key) {
+    'bi_blur' => 'BI blur',
+    'bi_brk'  => 'BI break',
+    'bi_rec'  => 'BI recovery',
+    'bo_blur' => 'BO blur',
+    'bo_brk'  => 'BO break',
+    'bo_rec'  => 'BO recovery',
+    _         => key,
+  };
+
+  Widget _vergRow(bool isDark, _VD row, bool isLast) {
+    final norm = row.norm;
+    String badge = ''; Color badgeBg = kOkBg; Color badgeFg = kOkText;
+    if (norm != null) {
+      final diff = row.val - norm;
+      if (diff.abs() <= 2) {
+        badge = 'Norm';
+      } else if (diff < 0) {
+        badge = '${diff.abs().toStringAsFixed(0)}Δ low';
+        badgeBg = kBadBg; badgeFg = kBadTextDark;
+      } else {
+        badge = '${diff.toStringAsFixed(0)}Δ high';
+        badgeBg = kWarnBg; badgeFg = kWarnTextDark;
+      }
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        border: isLast ? null : Border(bottom: BorderSide(
+          color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
+          width: 0.5,
+        )),
+      ),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(row.label, style: TextStyle(
+          fontSize: 13,
+          color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
+        )),
+        Row(children: [
+          Text('${row.val.toStringAsFixed(0)}Δ',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          if (badge.isNotEmpty) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                  color: badgeBg, borderRadius: BorderRadius.circular(999)),
+              child: Text(badge,
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: badgeFg)),
+            ),
+          ],
+        ]),
+      ]),
+    );
+  }
+
+  // ─── Sheard's ──────────────────────────────────────────────────────────────
+
+  Widget _sheardsCard(bool isDark) {
+    final ph = _n('sh_ph'), cv = _n('sh_cv');
+    Widget? result;
+    if (ph != null && cv != null) {
+      final a = ph.abs();
+      final pass = cv >= 2 * a;
+      final prism = ((2 * a - cv) / 3).clamp(0.0, double.infinity);
+      final dir = ph >= 0 ? 'BI' : 'BO';
+      result = ResultCard(
+        type: pass ? ResultType.ok : ResultType.bad,
+        label: "Sheard's",
+        value: pass ? 'Passes ✓' : 'Fails ✗',
+        note: pass
+            ? 'CV (${cv.toStringAsFixed(0)}Δ) ≥ 2 × phoria (${a.toStringAsFixed(1)}Δ)'
+            : 'Prism needed: ${prism.toStringAsFixed(2)}Δ $dir',
+      );
+    }
+    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const CardTitle(icon: Icons.balance_outlined, text: "Sheard's criterion"),
+      if (ph != null) _dataRow(isDark, 'Phoria', '${ph.toStringAsFixed(1)}Δ'),
+      if (cv != null) _dataRow(isDark, 'Comp. vergence', '${cv.toStringAsFixed(0)}Δ'),
+      ?result,
+    ]));
+  }
+
+  // ─── Percival's ────────────────────────────────────────────────────────────
+
+  Widget _percivsCard(bool isDark) {
+    final bo = _n('pc_bo'), bi = _n('pc_bi');
+    Widget? result;
+    if (bo != null && bi != null) {
+      final G = bo > bi ? bo : bi, L = bo < bi ? bo : bi;
+      final pass = L >= G / 2;
+      final prism = (G / 3 - (2 * L) / 3).clamp(0.0, double.infinity);
+      final dir = bo < bi ? 'BI' : 'BO';
+      result = ResultCard(
+        type: pass ? ResultType.ok : ResultType.bad,
+        label: "Percival's",
+        value: pass ? 'Passes ✓' : 'Fails ✗',
+        note: pass
+            ? 'Lesser (${L.toStringAsFixed(0)}Δ) ≥ half of greater (${G.toStringAsFixed(0)}Δ)'
+            : 'Prism needed: ${prism.toStringAsFixed(2)}Δ $dir',
+      );
+    }
+    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const CardTitle(icon: Icons.horizontal_distribute, text: "Percival's criterion"),
+      if (bo != null) _dataRow(isDark, 'BO blur/break', '${bo.toStringAsFixed(0)}Δ'),
+      if (bi != null) _dataRow(isDark, 'BI blur/break', '${bi.toStringAsFixed(0)}Δ'),
+      ?result,
+    ]));
+  }
+
+  // ─── Diagnosis ─────────────────────────────────────────────────────────────
+
+  Widget _diagnosisCard(bool isDark) {
+    final rows = <Widget>[];
+    void addNum(String lbl, String key, String Function(double) fmt) {
+      final v = _n(key);
+      if (v != null) rows.add(_dataRow(isDark, lbl, fmt(v)));
+    }
+    addNum('Dist phoria',     'dx_pd',      (v) => '${v.toStringAsFixed(1)}Δ');
+    addNum('Near phoria',     'dx_pn',      (v) => '${v.toStringAsFixed(1)}Δ');
+    addNum('AC/A',            'dx_aca',     (v) => '${v.toStringAsFixed(1)} : 1');
+    addNum('NPC break',       'dx_nb',      (v) => '${v.toStringAsFixed(1)} cm');
+    addNum('Age',             'dx_age',     (v) => '${v.toStringAsFixed(0)} yrs');
+    addNum('Amplitude',       'dx_amp',     (v) => '${v.toStringAsFixed(2)} D');
+    addNum('Bino. facility',  'dx_fac_bin', (v) => '${v.toStringAsFixed(0)} cpm');
+    addNum('MEM lag',         'dx_mem',     (v) => '${v.toStringAsFixed(2)} D');
+    addNum('BI break',        'dx_bi_brk',  (v) => '${v.toStringAsFixed(0)}Δ');
+    addNum('BO break',        'dx_bo_brk',  (v) => '${v.toStringAsFixed(0)}Δ');
+    final facFail = session.str('dx_fac_fail');
+    if (facFail != null && facFail.isNotEmpty) {
+      rows.add(_dataRow(isDark, 'Flipper fail', facFail));
+    }
+    if (rows.isEmpty) return const SizedBox.shrink();
+    return AppCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const CardTitle(icon: Icons.medical_services_outlined, text: 'Diagnosis inputs'),
+      ...rows,
+    ]));
+  }
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+
+  Widget _dataRow(bool isDark, String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 5),
+    child: Row(children: [
+      SizedBox(width: 130, child: Text(label, style: TextStyle(
+        fontSize: 13,
+        color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
+      ))),
+      Expanded(child: Text(value,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
+    ]),
+  );
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete session?'),
+        content: Text(
+            'Remove session from ${DateFormat('d MMM yyyy').format(session.date)}? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await context.read<SessionService>().delete(session);
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Delete', style: TextStyle(color: kBadText)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VD {
+  final String label;
+  final double val;
+  final double? norm;
+  _VD(this.label, this.val, this.norm);
+}
