@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "34588918970",
+    "project_id": "bv-toolkit",
+    "storage_bucket": "bv-toolkit.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:34588918970:android:2aed1d4bf086f8e9e42e83",
+        "android_client_info": {
+          "package_name": "com.company.bvtoolkit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "34588918970-m3cpos3l6c288h5m76ie5l6ct810bkbd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjktY0aVuD4vKF6pAWlRcuvpICF9hKIr0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "34588918970-m3cpos3l6c288h5m76ie5l6ct810bkbd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

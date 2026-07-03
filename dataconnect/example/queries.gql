@@ -1,0 +1,51 @@
+mutation CreatePatient($firstName: String!, $lastName: String!, $dateOfBirth: Date!) @auth(level: USER, insecureReason: "This operation allows logged-in users to create patient records associated with their account.") {
+  patient_insert(data: {
+    userId_expr: "auth.uid",
+    firstName: $firstName,
+    lastName: $lastName,
+    dateOfBirth: $dateOfBirth,
+    createdAt_expr: "request.time"
+  }) {
+    id
+  }
+}
+
+query GetMyPatients @auth(level: USER, insecureReason: "This operation allows logged-in users to retrieve their own patient records.") {
+  patients(where: {userId: {eq_expr: "auth.uid"}}) {
+    id
+    firstName
+    lastName
+    dateOfBirth
+    createdAt
+  }
+}
+
+mutation CreateAssessmentForPatient($patientId: UUID!, $assessmentDate: Date!, $status: String!, $chiefComplaint: String, $comments: String) @auth(level: USER, insecureReason: "This operation allows logged-in users to create assessments for patients they are associated with.") {
+  assessment_insert(data: {
+    patientId: $patientId,
+    userId_expr: "auth.uid",
+    assessmentDate: $assessmentDate,
+    status: $status,
+    chiefComplaint: $chiefComplaint,
+    comments: $comments,
+    createdAt_expr: "request.time"
+  }) {
+    id
+  }
+}
+
+query GetPatientAssessments($patientId: UUID!) @auth(level: USER, insecureReason: "This operation allows logged-in users to retrieve assessments for their associated patients.") {
+  assessments(where: {
+    _and: [
+      {patientId: {eq: $patientId}},
+      {userId: {eq_expr: "auth.uid"}}
+    ]
+  }) {
+    id
+    assessmentDate
+    status
+    chiefComplaint
+    comments
+    createdAt
+  }
+}

@@ -1,22 +1,39 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'firebase_options.dart';
 import 'theme.dart';
 import 'services/auth_service.dart';
 import 'services/patient_service.dart';
+import 'services/product_infra_service.dart';
 import 'services/session_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/tools/phoria_screen.dart';
 import 'screens/tools/vergence_screen.dart';
+import 'screens/tools/accommodation_screen.dart';
 import 'screens/tools/analysis_screen.dart';
 import 'screens/tools/diagnosis_screen.dart';
 import 'screens/tools/reference_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/auth/login_screen.dart';
 
+bool _firebaseReady = false;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  final firebaseOptions = _loadFirebaseOptions();
+  if (firebaseOptions == null) {
+    runApp(const ConfigurationErrorApp());
+    return;
+  }
+
+  await Firebase.initializeApp(options: firebaseOptions);
+  _firebaseReady = true;
+  await ProductInfraService.init();
 
   final auth = AuthService();
   await auth.init();
@@ -45,6 +62,46 @@ void main() async {
   );
 }
 
+class ConfigurationErrorApp extends StatelessWidget {
+  const ConfigurationErrorApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      home: const Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.lock_outline, size: 44, color: kBadText),
+                  SizedBox(height: 16),
+                  Text(
+                    'Firebase is not configured',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Run FlutterFire setup or pass Firebase dart defines before launching.',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF6E6E73)),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class BVToolkitApp extends StatelessWidget {
   const BVToolkitApp({super.key});
 
@@ -56,6 +113,13 @@ class BVToolkitApp extends StatelessWidget {
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
       themeMode: ThemeMode.system,
+      navigatorObservers: _firebaseReady
+          ? [
+              FirebaseAnalyticsObserver(
+                analytics: ProductInfraService.analytics,
+              ),
+            ]
+          : const [],
       home: const _AuthGate(),
     );
   }
@@ -68,6 +132,14 @@ class _AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLoggedIn = context.watch<AuthService>().isLoggedIn;
     return isLoggedIn ? const MainShell() : const LoginScreen();
+  }
+}
+
+FirebaseOptions? _loadFirebaseOptions() {
+  try {
+    return DefaultFirebaseOptions.currentPlatform;
+  } catch (_) {
+    return null;
   }
 }
 
@@ -84,8 +156,9 @@ class _MainShellState extends State<MainShell> {
 
   static const _titles = [
     ('BV Toolkit', 'Clinical suite'),
-    ('Phoria & AC/A', 'Classification & ratio'),
+    ('Phoria & ratios', 'AC/A and CA/C'),
     ('Vergence & NPC', 'Ranges vs. norms'),
+    ('Accommodation', 'Norms & ranges'),
     ('Analysis', "Sheard's & Percival's"),
     ('Diagnose', 'Ranked BV diagnosis'),
     ('Reference', 'Norms & conditions'),
@@ -112,17 +185,22 @@ class _MainShellState extends State<MainShell> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title),
-            Text(subtitle, style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.normal,
-              color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
-            )),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.normal,
+                color: isDark
+                    ? const Color(0xFF8E8E93)
+                    : const Color(0xFF6E6E73),
+              ),
+            ),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.menu_book_outlined),
-            onPressed: () => _goTab(5),
+            onPressed: () => _goTab(6),
             tooltip: 'Reference',
           ),
           GestureDetector(
@@ -162,13 +240,14 @@ class _MainShellState extends State<MainShell> {
           HomeScreen(onNavigate: _goTab),
           const PhoriaScreen(),
           const VergenceScreen(),
+          const AccommodationScreen(),
           const AnalysisScreen(),
           const DiagnosisScreen(),
           const ReferenceScreen(),
         ],
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab < 5 ? _tab : 0,
+        selectedIndex: _tab < 6 ? _tab : 0,
         onDestinationSelected: _goTab,
         destinations: const [
           NavigationDestination(
@@ -184,6 +263,11 @@ class _MainShellState extends State<MainShell> {
           NavigationDestination(
             icon: Icon(Icons.compare_arrows),
             label: 'Vergence',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.zoom_in_outlined),
+            selectedIcon: Icon(Icons.zoom_in),
+            label: 'Acc.',
           ),
           NavigationDestination(
             icon: Icon(Icons.balance_outlined),

@@ -94,7 +94,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
               itemCount: list.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 1),
+              separatorBuilder: (context, index) => const SizedBox(height: 1),
               itemBuilder: (_, i) => _buildRow(list[i], isDark, i, list.length),
             ),
     );

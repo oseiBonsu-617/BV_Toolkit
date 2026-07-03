@@ -25,18 +25,23 @@ A Flutter mobile application for optometrists and vision therapists to perform b
 - Sessions stored locally and viewable with full recomputed results
 
 ### Authentication
-- Local multi-user support — each clinician's patients and sessions are kept separate
-- Credentials stored in the iOS Keychain / Android Keystore via `flutter_secure_storage`
-- SHA-256 password hashing with a per-user UUID salt
+- Server-backed clinician authentication with Firebase Authentication
+- Email/password sign-up, hosted password verification, enforced email confirmation, password reset, and secure session persistence
+- Firestore-backed clinician profile metadata for title/clinic details
+- Per-clinician patient/session scoping through the authenticated Firebase user id
+- Firebase Analytics, Crashlytics, and Remote Config are initialized at app startup
 
 ## Tech stack
 
 - **Flutter 3.41** / **Dart 3.11** — iOS and Android
 - **Material 3** with a custom green theme (`#1D9E75`)
 - **provider** — `ChangeNotifier` + `ChangeNotifierProxyProvider` for scoped state
+- **Firebase Auth** — hosted clinician identity, email verification, password reset
+- **Cloud Firestore** — clinician profile metadata
+- **Firebase Analytics** — route/event analytics
+- **Firebase Crashlytics** — fatal Flutter and zone error reporting
+- **Firebase Remote Config** — runtime product flags/defaults
 - **sqflite** — local SQLite database (schema versioned, v1 → v2 migration)
-- **flutter_secure_storage** — encrypted credential storage
-- **crypto** — SHA-256 password hashing
 - **intl** — date formatting
 - **uuid** — ID generation
 
@@ -44,6 +49,7 @@ A Flutter mobile application for optometrists and vision therapists to perform b
 
 ```
 lib/
+├── firebase_options.dart        # Firebase compile-time config
 ├── main.dart                    # App entry, MultiProvider setup, auth gate
 ├── theme.dart                   # Color constants, ThemeData builders
 ├── models/
@@ -54,6 +60,7 @@ lib/
 │   ├── auth_service.dart        # Registration, sign-in, profile, password change
 │   ├── database_helper.dart     # SQLite singleton with schema migrations
 │   ├── patient_service.dart     # Patient CRUD, search, per-user scoping
+│   ├── product_infra_service.dart # Analytics, Crashlytics, Remote Config
 │   └── session_service.dart     # Session save/delete/query with caching
 ├── screens/
 │   ├── auth/
@@ -84,14 +91,48 @@ lib/
 # Install dependencies
 flutter pub get
 
-# Run on a connected device
-flutter run
+# Run on a connected device with Firebase configured
+flutter run \
+  --dart-define=FIREBASE_API_KEY=your-api-key \
+  --dart-define=FIREBASE_PROJECT_ID=your-project-id \
+  --dart-define=FIREBASE_MESSAGING_SENDER_ID=your-sender-id \
+  --dart-define=FIREBASE_ANDROID_APP_ID=your-android-app-id \
+  --dart-define=FIREBASE_IOS_APP_ID=your-ios-app-id
 
 # Build a debug iOS archive (for wireless or Xcode deployment)
-flutter build ios --debug
+flutter build ios --debug \
+  --dart-define=FIREBASE_API_KEY=your-api-key \
+  --dart-define=FIREBASE_PROJECT_ID=your-project-id \
+  --dart-define=FIREBASE_MESSAGING_SENDER_ID=your-sender-id \
+  --dart-define=FIREBASE_IOS_APP_ID=your-ios-app-id
 ```
 
 For iOS deployment on a physical device, open `ios/Runner.xcworkspace` in Xcode, select your device, and press ⌘R.
+
+### Firebase setup
+
+1. Create a Firebase project.
+2. Add Android and iOS apps to the Firebase project.
+3. Enable Email/Password in Authentication → Sign-in method.
+4. Create Firestore in production mode and add a `users/{uid}` security rule scoped to `request.auth.uid`.
+5. Enable Analytics, Crashlytics, and Remote Config in the Firebase console.
+6. Configure the app using either:
+   - FlutterFire CLI (`dart pub global activate flutterfire_cli`, then `flutterfire configure`), or
+   - the `--dart-define` values shown above.
+7. The app intentionally shows a configuration error screen if Firebase values are missing.
+
+Example Firestore rule for clinician profile documents:
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
 
 ## Database schema
 

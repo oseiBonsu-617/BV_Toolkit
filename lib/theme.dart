@@ -105,8 +105,8 @@ ThemeData buildTheme(Brightness brightness) {
 // ─── Page route with slide + fade transition ────────────────────────────────
 
 Route<T> appRoute<T>(Widget page) => PageRouteBuilder<T>(
-  pageBuilder: (_, animation, __) => page,
-  transitionsBuilder: (_, animation, __, child) {
+  pageBuilder: (context, animation, secondaryAnimation) => page,
+  transitionsBuilder: (context, animation, secondaryAnimation, child) {
     final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
     return SlideTransition(
       position: Tween<Offset>(

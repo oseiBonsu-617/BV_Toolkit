@@ -25,7 +25,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    setState(() { _error = null; _loading = true; });
+    setState(() {
+      _error = null;
+      _loading = true;
+    });
     try {
       await context.read<AuthService>().signIn(
         email: _email.text,
@@ -45,7 +48,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF2F2F7),
+      backgroundColor: isDark
+          ? const Color(0xFF0F0F0F)
+          : const Color(0xFFF2F2F7),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -74,8 +79,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     onSubmitted: (_) => _submit(),
                     icon: Icons.lock_outline,
                     suffix: IconButton(
-                      icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          size: 20, color: const Color(0xFF8E8E93)),
+                      icon: Icon(
+                        _obscure
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 20,
+                        color: const Color(0xFF8E8E93),
+                      ),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
@@ -92,21 +102,38 @@ class _LoginScreenState extends State<LoginScreen> {
                 ]),
                 const SizedBox(height: 16),
                 Center(
-                  child: TextButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                    ),
-                    child: Text.rich(TextSpan(children: [
-                      const TextSpan(
-                        text: "Don't have an account?  ",
-                        style: TextStyle(color: Color(0xFF8E8E93)),
+                  child: Column(
+                    children: [
+                      TextButton(
+                        onPressed: _showPasswordReset,
+                        child: const Text('Forgot password?'),
                       ),
-                      TextSpan(
-                        text: 'Create one',
-                        style: TextStyle(color: kPrimary, fontWeight: FontWeight.w500),
+                      TextButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RegisterScreen(),
+                          ),
+                        ),
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(
+                                text: "Don't have an account?  ",
+                                style: TextStyle(color: Color(0xFF8E8E93)),
+                              ),
+                              TextSpan(
+                                text: 'Create one',
+                                style: TextStyle(
+                                  color: kPrimary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ])),
+                    ],
                   ),
                 ),
               ],
@@ -127,13 +154,22 @@ class _LoginScreenState extends State<LoginScreen> {
             color: kPrimary,
             borderRadius: BorderRadius.circular(18),
           ),
-          child: const Icon(Icons.remove_red_eye_outlined, color: Colors.white, size: 36),
+          child: const Icon(
+            Icons.remove_red_eye_outlined,
+            color: Colors.white,
+            size: 36,
+          ),
         ),
         const SizedBox(height: 16),
-        const Text('BV Toolkit', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600)),
+        const Text(
+          'BV Toolkit',
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 4),
-        Text('Clinical binocular vision suite',
-            style: TextStyle(fontSize: 14, color: const Color(0xFF8E8E93))),
+        Text(
+          'Clinical binocular vision suite',
+          style: TextStyle(fontSize: 14, color: const Color(0xFF8E8E93)),
+        ),
       ],
     );
   }
@@ -149,7 +185,10 @@ class _LoginScreenState extends State<LoginScreen> {
           width: 0.5,
         ),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
     );
   }
 
@@ -167,7 +206,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
@@ -177,7 +219,9 @@ class _LoginScreenState extends State<LoginScreen> {
           onSubmitted: onSubmitted,
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: icon != null ? Icon(icon, size: 18, color: const Color(0xFF8E8E93)) : null,
+            prefixIcon: icon != null
+                ? Icon(icon, size: 18, color: const Color(0xFF8E8E93))
+                : null,
             suffixIcon: suffix,
           ),
         ),
@@ -193,11 +237,18 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: kBadBorder, width: 0.5),
       ),
-      child: Row(children: [
-        const Icon(Icons.error_outline, size: 16, color: kBadText),
-        const SizedBox(width: 8),
-        Expanded(child: Text(msg, style: const TextStyle(fontSize: 13, color: kBadText))),
-      ]),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, size: 16, color: kBadText),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              msg,
+              style: const TextStyle(fontSize: 13, color: kBadText),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -211,9 +262,132 @@ class _LoginScreenState extends State<LoginScreen> {
       child: ElevatedButton(
         onPressed: loading ? null : onPressed,
         child: loading
-            ? const SizedBox(width: 20, height: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
             : Text(label),
+      ),
+    );
+  }
+
+  void _showPasswordReset() {
+    final email = TextEditingController(text: _email.text);
+    String? error;
+    bool sent = false;
+    bool loading = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Reset password',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Enter your account email and we will send a secure reset link.',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF6E6E73)),
+                ),
+                const SizedBox(height: 16),
+                _field(
+                  controller: email,
+                  label: 'Email',
+                  hint: 'you@clinic.com',
+                  keyboard: TextInputType.emailAddress,
+                  action: TextInputAction.done,
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 12),
+                  _errorBox(error!),
+                ],
+                if (sent) ...[
+                  const SizedBox(height: 12),
+                  _successBox('Reset link sent. Check your email.'),
+                ],
+                const SizedBox(height: 18),
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: loading
+                        ? null
+                        : () async {
+                            setSheetState(() {
+                              error = null;
+                              sent = false;
+                              loading = true;
+                            });
+                            try {
+                              await context
+                                  .read<AuthService>()
+                                  .sendPasswordReset(email.text);
+                              setSheetState(() => sent = true);
+                            } on AuthException catch (e) {
+                              setSheetState(() => error = e.message);
+                            } finally {
+                              setSheetState(() => loading = false);
+                            }
+                          },
+                    child: loading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Send Reset Link'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ).whenComplete(email.dispose);
+  }
+
+  Widget _successBox(String msg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: kOkBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: kOkBorder, width: 0.5),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.mark_email_read_outlined, size: 16, color: kOkText),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              msg,
+              style: const TextStyle(fontSize: 13, color: kOkText),
+            ),
+          ),
+        ],
       ),
     );
   }

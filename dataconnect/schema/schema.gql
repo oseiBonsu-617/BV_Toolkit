@@ -1,0 +1,47 @@
+type User @table {
+  displayName: String!
+  email: String!
+  createdAt: Timestamp!
+  photoUrl: String
+  clinicName: String
+  role: String
+}
+
+type Patient @table {
+  user: User!
+  firstName: String!
+  lastName: String!
+  dateOfBirth: Date!
+  createdAt: Timestamp!
+  gender: String
+  address: String
+  phoneNumber: String
+  email: String
+  notes: String
+}
+
+type Assessment @table {
+  patient: Patient!
+  user: User!
+  assessmentDate: Date!
+  createdAt: Timestamp!
+  status: String!
+  chiefComplaint: String
+  comments: String
+}
+
+type TestType @table {
+  name: String!
+  description: String!
+}
+
+type TestResult @table {
+  assessment: Assessment!
+  testType: TestType!
+  resultDate: Date!
+  createdAt: Timestamp!
+  measurement: String
+  unit: String
+  observation: String
+  interpretation: String
+}

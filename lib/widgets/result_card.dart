@@ -24,13 +24,13 @@ class ResultCard extends StatelessWidget {
       ResultType.bad => (kBadBg, kBadBorder, kBadTextDark, kBadText),
       ResultType.warn => (kWarnBg, kWarnBorder, kWarnTextDark, kWarnText),
       ResultType.info => (
-          Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF2C2C2E)
-              : const Color(0xFFF2F2F7),
-          Theme.of(context).dividerColor,
-          Theme.of(context).textTheme.bodyLarge!.color!,
-          Theme.of(context).textTheme.bodySmall!.color!,
-        ),
+        Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF2C2C2E)
+            : const Color(0xFFF2F2F7),
+        Theme.of(context).dividerColor,
+        Theme.of(context).textTheme.bodyLarge!.color!,
+        Theme.of(context).textTheme.bodySmall!.color!,
+      ),
     };
 
     final labelColor = switch (type) {
@@ -51,13 +51,29 @@ class ResultCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(),
-              style: TextStyle(fontSize: 10, letterSpacing: 0.5, color: labelColor)),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              letterSpacing: 0.5,
+              color: labelColor,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(value, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500, color: textColor)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w500,
+              color: textColor,
+            ),
+          ),
           if (note != null && note!.isNotEmpty) ...[
             const SizedBox(height: 2),
-            Text(note!, style: TextStyle(fontSize: 11, height: 1.5, color: noteColor)),
+            Text(
+              note!,
+              style: TextStyle(fontSize: 11, height: 1.5, color: noteColor),
+            ),
           ],
         ],
       ),
@@ -150,8 +166,10 @@ class CardTitle extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: kPrimary),
           const SizedBox(width: 6),
-          Text(text,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );
@@ -164,12 +182,9 @@ class Pill extends StatelessWidget {
   final Color fg;
   const Pill(this.text, {super.key, required this.bg, required this.fg});
 
-  factory Pill.normal(String text) =>
-      Pill(text, bg: kOkBg, fg: kOkText);
-  factory Pill.warn(String text) =>
-      Pill(text, bg: kWarnBg, fg: kWarnTextDark);
-  factory Pill.fail(String text) =>
-      Pill(text, bg: kBadBg, fg: kBadTextDark);
+  factory Pill.normal(String text) => Pill(text, bg: kOkBg, fg: kOkText);
+  factory Pill.warn(String text) => Pill(text, bg: kWarnBg, fg: kWarnTextDark);
+  factory Pill.fail(String text) => Pill(text, bg: kBadBg, fg: kBadTextDark);
   factory Pill.info(String text) =>
       Pill(text, bg: kBadgeBlueBg, fg: kBadgeBlueText);
   factory Pill.purple(String text) =>
@@ -179,8 +194,14 @@ class Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-      child: Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: fg)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: fg),
+      ),
     );
   }
 }
@@ -226,7 +247,8 @@ class SegmentedControl extends StatelessWidget {
                           color: isDark
                               ? const Color(0xFF48484A)
                               : const Color(0xFFE5E5EA),
-                          width: 0.5)
+                          width: 0.5,
+                        )
                       : null,
                 ),
                 child: Text(
@@ -238,8 +260,8 @@ class SegmentedControl extends StatelessWidget {
                     color: isOn
                         ? kPrimary
                         : (isDark
-                            ? const Color(0xFF8E8E93)
-                            : const Color(0xFF6E6E73)),
+                              ? const Color(0xFF8E8E93)
+                              : const Color(0xFF6E6E73)),
                   ),
                 ),
               ),
@@ -271,24 +293,37 @@ class NumField extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         final text = controller.text.trim();
-        final isInvalid = text.isNotEmpty && double.tryParse(text) == null;
+        final parsed = double.tryParse(text);
+        final isInvalid =
+            text.isNotEmpty && (parsed == null || !parsed.isFinite);
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF8E8E93)
-                      : const Color(0xFF6E6E73),
-                )),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark
+                    ? const Color(0xFF8E8E93)
+                    : const Color(0xFF6E6E73),
+              ),
+            ),
             const SizedBox(height: 3),
             TextField(
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
               decoration: InputDecoration(
                 hintText: placeholder,
-                hintStyle: const TextStyle(fontSize: 13),
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  color: isDark
+                      ? const Color(0xFF636366)
+                      : const Color(0xFFC7C7CC),
+                ),
                 errorText: isInvalid ? 'Enter a valid number' : null,
               ),
               style: const TextStyle(fontSize: 13),
@@ -300,12 +335,124 @@ class NumField extends StatelessWidget {
   }
 }
 
+class PhoriaField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final String direction;
+  final ValueChanged<String> onDirectionChanged;
+  final String? placeholder;
+  final double step;
+
+  const PhoriaField({
+    super.key,
+    required this.label,
+    required this.controller,
+    required this.direction,
+    required this.onDirectionChanged,
+    this.placeholder,
+    this.step = 1,
+  });
+
+  static const directions = ['Exo', 'Eso', 'Ortho'];
+
+  static double? signedValue(
+    TextEditingController controller,
+    String direction,
+  ) {
+    final text = controller.text.trim();
+    if (text.isEmpty) return null;
+    final value = double.tryParse(text);
+    if (value == null || !value.isFinite) return null;
+    if (direction == 'Ortho') return 0;
+    final magnitude = value.abs();
+    return direction == 'Eso' ? -magnitude : magnitude;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: NumField(
+            label: label,
+            controller: controller,
+            placeholder: placeholder,
+            step: step,
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 96,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Direction',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark
+                      ? const Color(0xFF8E8E93)
+                      : const Color(0xFF6E6E73),
+                ),
+              ),
+              const SizedBox(height: 3),
+              Container(
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF2C2C2E)
+                      : const Color(0xFFF2F2F7),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: direction,
+                    isExpanded: true,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                    dropdownColor: isDark
+                        ? const Color(0xFF2C2C2E)
+                        : Colors.white,
+                    items: directions
+                        .map(
+                          (d) => DropdownMenuItem(
+                            value: d,
+                            child: Text(
+                              d,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) onDirectionChanged(value);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ─── Animation helpers ──────────────────────────────────────────────────────
 
 class FadeIn extends StatefulWidget {
   final Widget child;
   final Duration duration;
-  const FadeIn({super.key, required this.child, this.duration = const Duration(milliseconds: 280)});
+  const FadeIn({
+    super.key,
+    required this.child,
+    this.duration = const Duration(milliseconds: 280),
+  });
 
   @override
   State<FadeIn> createState() => _FadeInState();
@@ -322,7 +469,10 @@ class _FadeInState extends State<FadeIn> with SingleTickerProviderStateMixin {
     _ctrl = AnimationController(vsync: this, duration: widget.duration);
     final curved = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
     _opacity = curved;
-    _slide = Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero).animate(curved);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(curved);
     _ctrl.forward();
   }
 
@@ -345,20 +495,28 @@ class SkeletonBox extends StatefulWidget {
   final double? width;
   final double height;
   final double radius;
-  const SkeletonBox({super.key, this.width, required this.height, this.radius = 8});
+  const SkeletonBox({
+    super.key,
+    this.width,
+    required this.height,
+    this.radius = 8,
+  });
 
   @override
   State<SkeletonBox> createState() => _SkeletonBoxState();
 }
 
-class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStateMixin {
+class _SkeletonBoxState extends State<SkeletonBox>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))
-      ..repeat();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
   }
 
   @override
@@ -375,7 +533,7 @@ class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStat
 
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) => Container(
+      builder: (context, child) => Container(
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
@@ -402,26 +560,38 @@ class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
-  const EmptyState({super.key, required this.icon, required this.title, this.subtitle});
+  const EmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(36),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 52, color: const Color(0xFFBCBCC0)),
-          const SizedBox(height: 16),
-          Text(title,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 52, color: const Color(0xFFBCBCC0)),
+            const SizedBox(height: 16),
+            Text(
+              title,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              textAlign: TextAlign.center),
-          if (subtitle != null) ...[
-            const SizedBox(height: 6),
-            Text(subtitle!,
+              textAlign: TextAlign.center,
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                subtitle!,
                 style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
-                textAlign: TextAlign.center),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
-        ]),
+        ),
       ),
     );
   }

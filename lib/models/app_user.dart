@@ -39,7 +39,10 @@ class AppUser {
       );
 
   String get initials {
-    final parts = displayName.trim().split(RegExp(r'\s+'));
+    final parts = displayName
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return (parts.first[0] + parts.last[0]).toUpperCase();
