@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../theme.dart';
 import '../../widgets/result_card.dart';
+import 'graphical_analysis_screen.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -184,6 +186,42 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       controller: _scroll,
       padding: const EdgeInsets.all(12),
       children: [
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const CardTitle(
+                icon: Icons.show_chart,
+                text: 'Graphical analysis',
+              ),
+              InfoBox(
+                child: const Text(
+                  'Plot the full Zone of Clear Single Binocular Vision (ZCSBV) from phoria, fusional reserves and NRA/PRA, with automatic interpretation.',
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  appRoute(const GraphicalAnalysisScreen()),
+                ),
+                icon: const Icon(Icons.open_in_full, size: 16),
+                label: const Text('Open ZCSBV plot'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: kPrimary,
+                  minimumSize: const Size(double.infinity, 46),
+                  side: const BorderSide(color: kPrimary, width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

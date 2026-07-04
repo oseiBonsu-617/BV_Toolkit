@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../models/assessment.dart';
+import '../../models/test_session.dart';
+import '../../services/assessment_engine.dart';
 import '../../services/session_service.dart';
 import '../../theme.dart';
-import '../../widgets/criterion_graph.dart';
+import '../../widgets/diagnosis_plan_view.dart';
 import '../../widgets/result_card.dart';
 
 class SessionRecordScreen extends StatefulWidget {
@@ -62,39 +65,24 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
   final _boBrkN = TextEditingController();
   final _boRecN = TextEditingController();
 
-  // Analysis
-  final _shPh = TextEditingController();
-  final _shCv = TextEditingController();
-  final _pcBo = TextEditingController();
-  final _pcBi = TextEditingController();
-  String _shPhDir = 'Exo';
+  // Sheard's & Percival's are derived from the phoria + vergence above.
 
-  // Diagnosis inputs
-  final _dxPd = TextEditingController();
-  final _dxPn = TextEditingController();
-  String _dxPdDir = 'Exo';
-  String _dxPnDir = 'Exo';
-  final _dxAca = TextEditingController();
-  final _dxNb = TextEditingController();
-  final _dxNr = TextEditingController();
-  final _dxBiBlur = TextEditingController();
-  final _dxBiBrk = TextEditingController();
-  final _dxBoBlur = TextEditingController();
-  final _dxBoBrk = TextEditingController();
-  final _dxCv = TextEditingController();
-  final _dxLv = TextEditingController();
-  final _dxGv = TextEditingController();
+  // Diagnosis inputs — only the fields that can't be derived from above.
   final _dxAge = TextEditingController();
   final _dxAmp = TextEditingController();
   final _dxFacBin = TextEditingController();
-  final _dxFacMon = TextEditingController();
   final _dxMem = TextEditingController();
   String _dxFacFail = '';
 
   bool _saving = false;
 
+  final _scroll = ScrollController();
+  DiagnosisPlan? _plan;
+  bool _diagnosed = false;
+
   @override
   void dispose() {
+    _scroll.dispose();
     for (final c in [
       _noteCtrl,
       _phDist,
@@ -118,26 +106,9 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       _boBlurN,
       _boBrkN,
       _boRecN,
-      _shPh,
-      _shCv,
-      _pcBo,
-      _pcBi,
-      _dxPd,
-      _dxPn,
-      _dxAca,
-      _dxNb,
-      _dxNr,
-      _dxBiBlur,
-      _dxBiBrk,
-      _dxBoBlur,
-      _dxBoBrk,
-      _dxCv,
-      _dxLv,
-      _dxGv,
       _dxAge,
       _dxAmp,
       _dxFacBin,
-      _dxFacMon,
       _dxMem,
     ]) {
       c.dispose();
@@ -171,13 +142,124 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
     _biBrkN,
     _boBlurN,
     _boBrkN,
-    _shPh,
-    _shCv,
-    _pcBo,
-    _pcBi,
-    _dxPd,
-    _dxPn,
+    _dxAge,
+    _dxAmp,
+    _dxFacBin,
+    _dxMem,
   ]);
+
+  /// AC/A ratio computed from the AC/A section (calculated or gradient method).
+  double? _computeAca() {
+    if (_acaSeg == 0) {
+      final ipd = _v(_ipd),
+          pd = _phoriaValue(_phDist, _phDistDir),
+          pn = _phoriaValue(_phNear, _phNearDir),
+          nd = _v(_ndist);
+      if (_isPositiveFinite(ipd) &&
+          _isFinite(pd) &&
+          _isFinite(pn) &&
+          _isPositiveFinite(nd)) {
+        return (ipd! / 10) + (pd! - pn!) / (1 / (nd! / 100));
+      }
+    } else {
+      final p1 = _phoriaValue(_gp1, _gp1Dir),
+          p2 = _phoriaValue(_gp2, _gp2Dir),
+          lens = _v(_glens);
+      if (_isFinite(p1) && _isFinite(p2) && _isFinite(lens) && lens != 0) {
+        return (p2! - p1!).abs() / lens!.abs();
+      }
+    }
+    return null;
+  }
+
+  // Derived Sheard's / Percival's from the phoria + vergence entered above.
+  _Sheards? _sheardsFor(double? phoriaSigned, double? boBrk, double? biBrk) {
+    if (phoriaSigned == null || phoriaSigned == 0) return null;
+    final exo = phoriaSigned > 0;
+    final comp = exo ? boBrk : biBrk;
+    if (comp == null) return null;
+    final mag = phoriaSigned.abs();
+    final prism = ((2 * mag - comp) / 3).clamp(0.0, double.infinity);
+    return _Sheards(
+      phoria: phoriaSigned,
+      comp: comp,
+      pass: comp >= 2 * mag,
+      prism: prism.toDouble(),
+      dir: exo ? 'BI' : 'BO',
+    );
+  }
+
+  _Percivals? _percivalsFor(double? boBrk, double? biBrk) {
+    if (boBrk == null || biBrk == null) return null;
+    final g = boBrk > biBrk ? boBrk : biBrk;
+    final l = boBrk < biBrk ? boBrk : biBrk;
+    final prism = (g / 3 - 2 * l / 3).clamp(0.0, double.infinity);
+    return _Percivals(
+      bo: boBrk,
+      bi: biBrk,
+      pass: l >= g / 2,
+      prism: prism.toDouble(),
+      dir: boBrk < biBrk ? 'BI' : 'BO',
+    );
+  }
+
+  Map<String, dynamic> _collectData() {
+    final pd = _phoriaValue(_phDist, _phDistDir);
+    final pn = _phoriaValue(_phNear, _phNearDir);
+    final aca = _computeAca();
+    final npcBrk = _v(_nbrk);
+    final biBrkD = _v(_biBrkD), boBrkD = _v(_boBrkD);
+    final biBrkN = _v(_biBrkN), boBrkN = _v(_boBrkN);
+
+    // Sheard's / Percival's derived from the phoria + vergence above,
+    // preferring near findings (the usual symptomatic distance).
+    final sheards =
+        _sheardsFor(pn, boBrkN, biBrkN) ?? _sheardsFor(pd, boBrkD, biBrkD);
+    final percivals =
+        _percivalsFor(boBrkN, biBrkN) ?? _percivalsFor(boBrkD, biBrkD);
+
+    return <String, dynamic>{
+      'ph_dist': pd,
+      'ph_near': pn,
+      'aca_method': _acaSeg == 0 ? 'calc' : 'grad',
+      'ipd': _v(_ipd),
+      'ndist': _v(_ndist),
+      'gp1': _phoriaValue(_gp1, _gp1Dir),
+      'gp2': _phoriaValue(_gp2, _gp2Dir),
+      'glens': _v(_glens),
+      'npc_brk': npcBrk,
+      'npc_rec': _v(_nrec),
+      'bi_blur_d': _v(_biBlurD),
+      'bi_brk_d': biBrkD,
+      'bi_rec_d': _v(_biRecD),
+      'bo_blur_d': _v(_boBlurD),
+      'bo_brk_d': boBrkD,
+      'bo_rec_d': _v(_boRecD),
+      'bi_blur_n': _v(_biBlurN),
+      'bi_brk_n': biBrkN,
+      'bi_rec_n': _v(_biRecN),
+      'bo_blur_n': _v(_boBlurN),
+      'bo_brk_n': boBrkN,
+      'bo_rec_n': _v(_boRecN),
+      // Derived analysis (stored so the saved session shows them too).
+      'sh_ph': sheards?.phoria,
+      'sh_cv': sheards?.comp,
+      'pc_bo': percivals?.bo,
+      'pc_bi': percivals?.bi,
+      // Diagnosis inputs — auto-filled from above + practitioner-entered.
+      'dx_pd': pd,
+      'dx_pn': pn,
+      'dx_aca': aca,
+      'dx_nb': npcBrk,
+      'dx_bi_brk': biBrkD,
+      'dx_bo_brk': boBrkD,
+      'dx_age': _v(_dxAge),
+      'dx_amp': _v(_dxAmp),
+      'dx_fac_bin': _v(_dxFacBin),
+      'dx_fac_fail': _dxFacFail.isEmpty ? null : _dxFacFail,
+      'dx_mem': _v(_dxMem),
+    }..removeWhere((_, v) => v == null);
+  }
 
   Future<void> _save() async {
     if (!_hasData) {
@@ -189,52 +271,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       return;
     }
     setState(() => _saving = true);
-    final data = <String, dynamic>{
-      'ph_dist': _phoriaValue(_phDist, _phDistDir),
-      'ph_near': _phoriaValue(_phNear, _phNearDir),
-      'aca_method': _acaSeg == 0 ? 'calc' : 'grad',
-      'ipd': _v(_ipd),
-      'ndist': _v(_ndist),
-      'gp1': _phoriaValue(_gp1, _gp1Dir),
-      'gp2': _phoriaValue(_gp2, _gp2Dir),
-      'glens': _v(_glens),
-      'npc_brk': _v(_nbrk),
-      'npc_rec': _v(_nrec),
-      'bi_blur_d': _v(_biBlurD),
-      'bi_brk_d': _v(_biBrkD),
-      'bi_rec_d': _v(_biRecD),
-      'bo_blur_d': _v(_boBlurD),
-      'bo_brk_d': _v(_boBrkD),
-      'bo_rec_d': _v(_boRecD),
-      'bi_blur_n': _v(_biBlurN),
-      'bi_brk_n': _v(_biBrkN),
-      'bi_rec_n': _v(_biRecN),
-      'bo_blur_n': _v(_boBlurN),
-      'bo_brk_n': _v(_boBrkN),
-      'bo_rec_n': _v(_boRecN),
-      'sh_ph': _phoriaValue(_shPh, _shPhDir),
-      'sh_cv': _v(_shCv),
-      'pc_bo': _v(_pcBo),
-      'pc_bi': _v(_pcBi),
-      'dx_pd': _phoriaValue(_dxPd, _dxPdDir),
-      'dx_pn': _phoriaValue(_dxPn, _dxPnDir),
-      'dx_aca': _v(_dxAca),
-      'dx_nb': _v(_dxNb),
-      'dx_nr': _v(_dxNr),
-      'dx_bi_blur': _v(_dxBiBlur),
-      'dx_bi_brk': _v(_dxBiBrk),
-      'dx_bo_blur': _v(_dxBoBlur),
-      'dx_bo_brk': _v(_dxBoBrk),
-      'dx_cv': _v(_dxCv),
-      'dx_lv': _v(_dxLv),
-      'dx_gv': _v(_dxGv),
-      'dx_age': _v(_dxAge),
-      'dx_amp': _v(_dxAmp),
-      'dx_fac_bin': _v(_dxFacBin),
-      'dx_fac_mon': _v(_dxFacMon),
-      'dx_fac_fail': _dxFacFail.isEmpty ? null : _dxFacFail,
-      'dx_mem': _v(_dxMem),
-    }..removeWhere((_, v) => v == null);
+    final data = _collectData();
 
     try {
       await context.read<SessionService>().save(
@@ -249,6 +286,39 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  void _diagnose() {
+    HapticFeedback.lightImpact();
+    if (!_hasData) {
+      showAppSnackBar(
+        context,
+        'Enter phoria or diagnosis inputs before running a diagnosis.',
+        error: true,
+      );
+      return;
+    }
+    final session = TestSession(
+      id: '',
+      patientId: widget.patientId,
+      userId: '',
+      date: _date,
+      data: _collectData(),
+      createdAt: DateTime.now(),
+    );
+    setState(() {
+      _plan = AssessmentEngine().planFromSession(session);
+      _diagnosed = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) {
+        _scroll.animateTo(
+          _scroll.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 420),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
   }
 
   // ─── Build ─────────────────────────────────────────────────────────────────
@@ -286,6 +356,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
         ],
       ),
       body: ListView(
+        controller: _scroll,
         padding: const EdgeInsets.all(14),
         children: [
           if (widget.assessmentImpression != null) ...[
@@ -346,9 +417,63 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
             section: RecommendedSection.diagnosis,
             child: _diagnosisContent(isDark),
           ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: _diagnose,
+            icon: const Icon(Icons.medical_services_outlined, size: 18),
+            label: const Text('Run diagnosis'),
+          ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _diagnosed
+                ? _diagnosisResult(isDark)
+                : const SizedBox.shrink(),
+          ),
           const SizedBox(height: 24),
         ],
       ),
+    );
+  }
+
+  // ─── Diagnosis result ────────────────────────────────────────────────────
+
+  Widget _diagnosisResult(bool isDark) {
+    final plan = _plan;
+    return Padding(
+      key: ValueKey(plan?.name ?? 'none'),
+      padding: const EdgeInsets.only(top: 10),
+      child: plan == null
+          ? ResultCard(
+              type: ResultType.warn,
+              label: 'Diagnosis',
+              value: 'No clear pattern',
+              note:
+                  'The entered values don\'t match a specific diagnostic pattern. Record distance & near phoria (or the Diagnosis inputs) to classify. You can still save this session.',
+            )
+          : AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const CardTitle(
+                    icon: Icons.healing_outlined,
+                    text: 'Diagnosis & management',
+                  ),
+                  DiagnosisPlanView(plan: plan),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Derived from the entered measurements. Correlate with the full examination before prescribing. Tap Save to record this session.',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      height: 1.45,
+                      fontStyle: FontStyle.italic,
+                      color: isDark
+                          ? const Color(0xFF8E8E93)
+                          : const Color(0xFF6E6E73),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -554,26 +679,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
   }
 
   Widget _acaContent() {
-    double? ratio;
-    if (_acaSeg == 0) {
-      final ipd = _v(_ipd),
-          pd = _phoriaValue(_phDist, _phDistDir),
-          pn = _phoriaValue(_phNear, _phNearDir),
-          nd = _v(_ndist);
-      if (_isPositiveFinite(ipd) &&
-          _isFinite(pd) &&
-          _isFinite(pn) &&
-          _isPositiveFinite(nd)) {
-        ratio = (ipd! / 10) + (pd! - pn!) / (1 / (nd! / 100));
-      }
-    } else {
-      final p1 = _phoriaValue(_gp1, _gp1Dir),
-          p2 = _phoriaValue(_gp2, _gp2Dir),
-          lens = _v(_glens);
-      if (_isFinite(p1) && _isFinite(p2) && _isFinite(lens) && lens != 0) {
-        ratio = (p2! - p1!).abs() / lens!.abs();
-      }
-    }
+    final ratio = _computeAca();
     final cls = ratio == null
         ? null
         : ratio < 3 || ratio > 7
@@ -916,116 +1022,77 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
   }
 
   Widget _sheardsContent() {
-    final ph = _phoriaValue(_shPh, _shPhDir), cv = _v(_shCv);
-    Widget? result;
-    if (ph != null && cv != null) {
-      final a = ph.abs();
-      final pass = cv >= 2 * a;
-      final prism = ((2 * a - cv) / 3).clamp(0, double.infinity);
-      final dir = ph >= 0 ? 'BI' : 'BO';
-      result = ResultCard(
-        type: pass ? ResultType.ok : ResultType.bad,
-        label: "Sheard's",
-        value: pass ? 'Passes ✓' : 'Fails ✗',
-        note: pass
-            ? 'CV (${cv.toStringAsFixed(0)}Δ) ≥ 2 × phoria (${a.toStringAsFixed(1)}Δ)'
-            : 'Prism needed: ${prism.toStringAsFixed(2)}Δ $dir',
-      );
-    }
+    final pd = _phoriaValue(_phDist, _phDistDir);
+    final pn = _phoriaValue(_phNear, _phNearDir);
+    final dist = _sheardsFor(pd, _v(_boBrkD), _v(_biBrkD));
+    final near = _sheardsFor(pn, _v(_boBrkN), _v(_biBrkN));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InfoBox(
-          child: const Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: 'Passes if: ',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                TextSpan(text: 'comp. vergence ≥ 2 × phoria'),
-              ],
-            ),
+          child: const Text(
+            'Derived from the phoria and vergence above. Passes if the compensating vergence ≥ 2 × phoria.',
           ),
         ),
-        PhoriaField(
-          label: 'Phoria magnitude (Δ)',
-          controller: _shPh,
-          direction: _shPhDir,
-          onDirectionChanged: (v) => setState(() => _shPhDir = v),
-          placeholder: 'e.g. 8',
-          step: 0.5,
-        ),
-        const SizedBox(height: 8),
-        NumField(
-          label: 'Comp. vergence break (Δ)',
-          controller: _shCv,
-          placeholder: 'e.g. 12',
-        ),
-        ?result,
-        if (_isFinite(ph) && _isFinite(cv))
-          SheardsGraph(phoria: ph!, compensatingVergence: cv!),
+        if (dist == null && near == null)
+          _derivedHint(
+            'Enter a phoria and its compensating vergence break (BO for exo, BI for eso) above.',
+          )
+        else ...[
+          if (dist != null) _sheardsCard('Distance', dist),
+          if (near != null) _sheardsCard('Near', near),
+        ],
       ],
     );
   }
 
+  Widget _sheardsCard(String at, _Sheards s) => ResultCard(
+    type: s.pass ? ResultType.ok : ResultType.bad,
+    label: "Sheard's — $at",
+    value: s.pass ? 'Passes ✓' : 'Fails ✗',
+    note: s.pass
+        ? 'Comp. vergence (${s.comp.toStringAsFixed(0)}Δ) ≥ 2 × phoria (${s.phoria.abs().toStringAsFixed(1)}Δ)'
+        : 'Prism needed: ${s.prism.toStringAsFixed(2)}Δ ${s.dir}',
+  );
+
   Widget _percivsContent() {
-    final bo = _v(_pcBo), bi = _v(_pcBi);
-    Widget? result;
-    if (bo != null && bi != null) {
-      final G = bo > bi ? bo : bi, L = bo < bi ? bo : bi;
-      final pass = L >= G / 2;
-      final prism = (G / 3 - (2 * L) / 3).clamp(0, double.infinity);
-      final dir = bo < bi ? 'BI' : 'BO';
-      result = ResultCard(
-        type: pass ? ResultType.ok : ResultType.bad,
-        label: "Percival's",
-        value: pass ? 'Passes ✓' : 'Fails ✗',
-        note: pass
-            ? 'Lesser (${L.toStringAsFixed(0)}Δ) ≥ half of greater (${G.toStringAsFixed(0)}Δ)'
-            : 'Prism needed: ${prism.toStringAsFixed(2)}Δ $dir',
-      );
-    }
+    final dist = _percivalsFor(_v(_boBrkD), _v(_biBrkD));
+    final near = _percivalsFor(_v(_boBrkN), _v(_biBrkN));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InfoBox(
-          child: const Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: 'Passes if: ',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-                TextSpan(text: 'lesser ≥ ½ × greater vergence'),
-              ],
-            ),
+          child: const Text(
+            'Derived from the vergence breaks above. Passes if the lesser reserve ≥ ½ × the greater.',
           ),
         ),
-        Row(
-          children: [
-            Expanded(
-              child: NumField(
-                label: 'BO blur/break (Δ)',
-                controller: _pcBo,
-                placeholder: '17',
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: NumField(
-                label: 'BI blur/break (Δ)',
-                controller: _pcBi,
-                placeholder: '13',
-              ),
-            ),
-          ],
-        ),
-        ?result,
-        if (_isFinite(bo) && _isFinite(bi)) PercivalsGraph(bo: bo!, bi: bi!),
+        if (dist == null && near == null)
+          _derivedHint('Enter both BO and BI break (distance or near) above.')
+        else ...[
+          if (dist != null) _percivsCard('Distance', dist),
+          if (near != null) _percivsCard('Near', near),
+        ],
       ],
     );
   }
+
+  Widget _percivsCard(String at, _Percivals p) {
+    final lesser = p.bo < p.bi ? p.bo : p.bi;
+    final greater = p.bo > p.bi ? p.bo : p.bi;
+    return ResultCard(
+      type: p.pass ? ResultType.ok : ResultType.bad,
+      label: "Percival's — $at",
+      value: p.pass ? 'Passes ✓' : 'Fails ✗',
+      note: p.pass
+          ? 'Lesser (${lesser.toStringAsFixed(0)}Δ) ≥ half of greater (${greater.toStringAsFixed(0)}Δ)'
+          : 'Prism needed: ${p.prism.toStringAsFixed(2)}Δ ${p.dir}',
+    );
+  }
+
+  Widget _derivedHint(String text) => Padding(
+    padding: const EdgeInsets.only(top: 2),
+    child: Text(text, style: _labelStyle()),
+  );
 
   Widget _diagnosisContent(bool isDark) {
     const opts = [
@@ -1035,53 +1102,24 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       ('both', 'Fails ±'),
       ('neither', 'Normal'),
     ];
+    final auto = <(String, String)>[
+      ('Dist phoria', _fmtPhoria(_phoriaValue(_phDist, _phDistDir))),
+      ('Near phoria', _fmtPhoria(_phoriaValue(_phNear, _phNearDir))),
+      ('AC/A', _computeAca()?.toStringAsFixed(1) ?? '—'),
+      ('NPC break', _fmtCm(_v(_nbrk))),
+      ('BI break (dist)', _fmtDelta(_v(_biBrkD))),
+      ('BO break (dist)', _fmtDelta(_v(_boBrkD))),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InfoBox(
           child: const Text(
-            'Fill in to record diagnosis inputs for this session.',
+            'Auto-filled from the tests above. Add the accommodative findings below that aren\'t captured elsewhere.',
           ),
         ),
-        PhoriaField(
-          label: 'Dist magnitude (Δ)',
-          controller: _dxPd,
-          direction: _dxPdDir,
-          onDirectionChanged: (v) => setState(() => _dxPdDir = v),
-          placeholder: 'e.g. 2',
-          step: 0.5,
-        ),
-        const SizedBox(height: 8),
-        PhoriaField(
-          label: 'Near magnitude (Δ)',
-          controller: _dxPn,
-          direction: _dxPnDir,
-          onDirectionChanged: (v) => setState(() => _dxPnDir = v),
-          placeholder: 'e.g. 8',
-          step: 0.5,
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: NumField(
-                label: 'AC/A (Δ/D)',
-                controller: _dxAca,
-                placeholder: 'e.g. 4',
-                step: 0.5,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: NumField(
-                label: 'Age (yrs)',
-                controller: _dxAge,
-                placeholder: '25',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
+        _autoFilledBox(isDark, auto),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -1116,30 +1154,9 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: NumField(
-                label: 'NPC break (cm)',
-                controller: _dxNb,
-                placeholder: '5',
-                step: 0.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: NumField(
-                label: 'BI break (Δ)',
-                controller: _dxBiBrk,
-                placeholder: '7',
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: NumField(
-                label: 'BO break (Δ)',
-                controller: _dxBoBrk,
-                placeholder: '19',
+                label: 'Age (yrs)',
+                controller: _dxAge,
+                placeholder: '25',
               ),
             ),
           ],
@@ -1190,6 +1207,52 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
     );
   }
 
+  Widget _autoFilledBox(bool isDark, List<(String, String)> items) {
+    final divider = isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: items.asMap().entries.map((e) {
+          final isLast = e.key == items.length - 1;
+          return Container(
+            padding: const EdgeInsets.symmetric(vertical: 7),
+            decoration: BoxDecoration(
+              border: isLast
+                  ? null
+                  : Border(bottom: BorderSide(color: divider, width: 0.5)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(e.value.$1, style: _labelStyle()),
+                Text(
+                  e.value.$2,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  String _fmtPhoria(double? v) {
+    if (v == null) return '—';
+    if (v == 0) return 'Ortho';
+    return '${v.abs().toStringAsFixed(1)}Δ ${v > 0 ? 'exo' : 'eso'}';
+  }
+
+  String _fmtDelta(double? v) => v == null ? '—' : '${v.toStringAsFixed(0)}Δ';
+  String _fmtCm(double? v) => v == null ? '—' : '${v.toStringAsFixed(1)} cm';
+
   TextStyle _labelStyle() => const TextStyle(
     fontSize: 11,
     fontWeight: FontWeight.w500,
@@ -1202,4 +1265,34 @@ class _VF {
   final TextEditingController ctrl;
   final double? norm;
   _VF(this.label, this.ctrl, this.norm);
+}
+
+class _Sheards {
+  final double phoria; // signed (exo +, eso -)
+  final double comp; // compensating (opposing) vergence break
+  final bool pass;
+  final double prism;
+  final String dir;
+  _Sheards({
+    required this.phoria,
+    required this.comp,
+    required this.pass,
+    required this.prism,
+    required this.dir,
+  });
+}
+
+class _Percivals {
+  final double bo;
+  final double bi;
+  final bool pass;
+  final double prism;
+  final String dir;
+  _Percivals({
+    required this.bo,
+    required this.bi,
+    required this.pass,
+    required this.prism,
+    required this.dir,
+  });
 }

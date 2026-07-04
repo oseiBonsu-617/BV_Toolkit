@@ -161,10 +161,14 @@ class AssessmentEngine {
   }
 
   /// Derive a management plan from actual measured session values.
+  ///
+  /// Falls back to the dedicated diagnosis-input keys (`dx_*`) so a plan is
+  /// produced whether the practitioner used the Phoria/NPC sections or the
+  /// Diagnosis inputs section.
   DiagnosisPlan? planFromSession(TestSession session) {
-    final phNear = session.numVal('ph_near');
-    final phDist = session.numVal('ph_dist');
-    final npcBrk = session.numVal('npc_brk');
+    final phNear = session.numVal('ph_near') ?? session.numVal('dx_pn');
+    final phDist = session.numVal('ph_dist') ?? session.numVal('dx_pd');
+    final npcBrk = session.numVal('npc_brk') ?? session.numVal('dx_nb');
     final npcRec = session.numVal('npc_rec');
 
     if (phNear == null && phDist == null) return null;

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pod install *)"
+      "Bash(pod install *)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter test *)",
+      "Bash(dart format *)"
     ]
   }
 }

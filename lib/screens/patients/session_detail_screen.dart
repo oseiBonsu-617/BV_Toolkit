@@ -6,7 +6,7 @@ import '../../models/test_session.dart';
 import '../../services/assessment_engine.dart';
 import '../../services/session_service.dart';
 import '../../theme.dart';
-import '../../widgets/criterion_graph.dart';
+import '../../widgets/diagnosis_plan_view.dart';
 import '../../widgets/result_card.dart';
 
 class SessionDetailScreen extends StatelessWidget {
@@ -463,8 +463,6 @@ class SessionDetailScreen extends StatelessWidget {
           if (cv != null)
             _dataRow(isDark, 'Comp. vergence', '${cv.toStringAsFixed(0)}Δ'),
           ?result,
-          if (_isFinite(ph) && _isFinite(cv))
-            SheardsGraph(phoria: ph!, compensatingVergence: cv!),
         ],
       ),
     );
@@ -502,7 +500,6 @@ class SessionDetailScreen extends StatelessWidget {
           if (bi != null)
             _dataRow(isDark, 'BI blur/break', '${bi.toStringAsFixed(0)}Δ'),
           ?result,
-          if (_isFinite(bo) && _isFinite(bi)) PercivalsGraph(bo: bo!, bi: bi!),
         ],
       ),
     );
@@ -579,16 +576,6 @@ class SessionDetailScreen extends StatelessWidget {
   // ─── Management plan (derived from measurements) ──────────────────────────
 
   Widget _managementSection(bool isDark, DiagnosisPlan plan) {
-    final byTier = <ManagementTier, List<ManagementOption>>{};
-    for (final o in plan.options) {
-      byTier.putIfAbsent(o.tier, () => []).add(o);
-    }
-    final tierOrder = [
-      ManagementTier.firstLine,
-      ManagementTier.secondLine,
-      ManagementTier.adjunct,
-    ];
-
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -597,195 +584,7 @@ class SessionDetailScreen extends StatelessWidget {
             icon: Icons.healing_outlined,
             text: 'Management plan',
           ),
-
-          // Diagnosis name
-          Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: kPrimary.withAlpha(15),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: kPrimary.withAlpha(50), width: 0.5),
-            ),
-            child: Text(
-              plan.name,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: kPrimary,
-              ),
-            ),
-          ),
-
-          // Options by tier
-          ...tierOrder.where(byTier.containsKey).expand((tier) {
-            final (bg, fg) = switch (tier) {
-              ManagementTier.firstLine => (kOkBg, kOkText),
-              ManagementTier.secondLine => (kWarnBg, kWarnTextDark),
-              ManagementTier.adjunct => (kBadgeBlueBg, kBadgeBlueText),
-            };
-            return [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: bg,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    tier.label.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: fg,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              ),
-              ...byTier[tier]!.map(
-                (o) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        o.title,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        o.detail,
-                        style: TextStyle(
-                          fontSize: 12,
-                          height: 1.5,
-                          color: isDark
-                              ? const Color(0xFF8E8E93)
-                              : const Color(0xFF6E6E73),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ];
-          }),
-
-          // Patient advice
-          const SizedBox(height: 2),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.person_outline, size: 14, color: kPrimary),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Patient advice',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: kPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      plan.patientAdvice,
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.5,
-                        color: isDark
-                            ? const Color(0xFF8E8E93)
-                            : const Color(0xFF6E6E73),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // Review
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.event_outlined, size: 14, color: kPrimary),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Review',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: kPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      plan.reviewSchedule,
-                      style: TextStyle(
-                        fontSize: 12,
-                        height: 1.5,
-                        color: isDark
-                            ? const Color(0xFF8E8E93)
-                            : const Color(0xFF6E6E73),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // Referral criteria
-          if (plan.referralCriteria.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            ...plan.referralCriteria.map(
-              (r) => Container(
-                margin: const EdgeInsets.only(bottom: 5),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: kWarnBg,
-                  border: Border.all(color: kWarnBorder, width: 0.5),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.warning_amber_outlined,
-                      size: 14,
-                      color: kWarnTextDark,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        r,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: kWarnTextDark,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          DiagnosisPlanView(plan: plan, showCriteria: false),
         ],
       ),
     );

@@ -23,18 +23,26 @@ class _PatientListScreenState extends State<PatientListScreen> {
     super.dispose();
   }
 
-  void _openAdd() => Navigator.push(context, appRoute(const PatientFormScreen()));
+  void _openAdd() =>
+      Navigator.push(context, appRoute(const PatientFormScreen()));
 
-  void _openDetail(Patient patient) =>
-      Navigator.push(context, appRoute(PatientDetailScreen(patientId: patient.id)));
+  void _openDetail(Patient patient) => Navigator.push(
+    context,
+    appRoute(PatientDetailScreen(patientId: patient.id)),
+  );
 
   Future<bool?> _confirmDelete(Patient p) => showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
       title: const Text('Delete patient?'),
-      content: Text('Remove ${p.fullName} and all their sessions? This cannot be undone.'),
+      content: Text(
+        'Remove ${p.fullName} and all their sessions? This cannot be undone.',
+      ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
           child: const Text('Delete', style: TextStyle(color: kBadText)),
@@ -77,7 +85,9 @@ class _PatientListScreenState extends State<PatientListScreen> {
         ],
         leading: const BackButton(),
       ),
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF2F2F7),
+      backgroundColor: isDark
+          ? const Color(0xFF0F0F0F)
+          : const Color(0xFFF2F2F7),
       floatingActionButton: FloatingActionButton(
         onPressed: _openAdd,
         backgroundColor: kPrimary,
@@ -85,8 +95,12 @@ class _PatientListScreenState extends State<PatientListScreen> {
       ),
       body: list.isEmpty
           ? EmptyState(
-              icon: service.hasPatients ? Icons.search_off : Icons.people_outline,
-              title: service.hasPatients ? 'No patients match' : 'No patients yet',
+              icon: service.hasPatients
+                  ? Icons.search_off
+                  : Icons.people_outline,
+              title: service.hasPatients
+                  ? 'No patients match'
+                  : 'No patients yet',
               subtitle: service.hasPatients
                   ? 'Try a different name or MRN'
                   : 'Tap + to add your first patient',
@@ -123,61 +137,115 @@ class _PatientListScreenState extends State<PatientListScreen> {
         ),
         child: const Icon(Icons.delete_outline, color: kBadText, size: 22),
       ),
-      child: GestureDetector(
-        onTap: () => _openDetail(p),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-            borderRadius: BorderRadius.vertical(
-              top: isFirst ? const Radius.circular(14) : Radius.zero,
-              bottom: isLast ? const Radius.circular(14) : Radius.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.vertical(
+          top: isFirst ? const Radius.circular(14) : Radius.zero,
+          bottom: isLast ? const Radius.circular(14) : Radius.zero,
+        ),
+        child: GestureDetector(
+          onTap: () => _openDetail(p),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+              border: Border(
+                bottom: isLast
+                    ? BorderSide.none
+                    : BorderSide(
+                        color: isDark
+                            ? const Color(0xFF38383A)
+                            : const Color(0xFFE5E5EA),
+                        width: 0.5,
+                      ),
+              ),
             ),
-            border: Border(
-              bottom: isLast
-                  ? BorderSide.none
-                  : BorderSide(
-                      color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
-                      width: 0.5),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                _avatar(p),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        p.fullName,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          if (p.age != null) ...[
+                            Text(
+                              '${p.age} y/o',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8E8E93),
+                              ),
+                            ),
+                            if (p.gender != null)
+                              const Text(
+                                ' · ',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF8E8E93),
+                                ),
+                              ),
+                          ],
+                          if (p.gender != null)
+                            Text(
+                              p.gender!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8E8E93),
+                              ),
+                            ),
+                          if (p.mrn != null) ...[
+                            const Text(
+                              ' · ',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8E8E93),
+                              ),
+                            ),
+                            Text(
+                              'MRN: ${p.mrn}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF8E8E93),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: Color(0xFF8E8E93),
+                ),
+              ],
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(children: [
-            _avatar(p),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(p.fullName,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                const SizedBox(height: 2),
-                Row(children: [
-                  if (p.age != null) ...[
-                    Text('${p.age} y/o',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF8E8E93))),
-                    if (p.gender != null) const Text(' · ',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF8E8E93))),
-                  ],
-                  if (p.gender != null) Text(p.gender!,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF8E8E93))),
-                  if (p.mrn != null) ...[
-                    const Text(' · ',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF8E8E93))),
-                    Text('MRN: ${p.mrn}',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF8E8E93))),
-                  ],
-                ]),
-              ]),
-            ),
-            const Icon(Icons.chevron_right, size: 18, color: Color(0xFF8E8E93)),
-          ]),
         ),
       ),
     );
   }
 
   Widget _avatar(Patient p) => CircleAvatar(
-        radius: 22,
-        backgroundColor: kPrimary.withAlpha(30),
-        child: Text(p.initials,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: kPrimary)),
-      );
+    radius: 22,
+    backgroundColor: kPrimary.withAlpha(30),
+    child: Text(
+      p.initials,
+      style: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: kPrimary,
+      ),
+    ),
+  );
 }
