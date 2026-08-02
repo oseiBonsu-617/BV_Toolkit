@@ -20,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePw = true;
   bool _obscureCf = true;
   bool _loading = false;
+  bool _googleLoading = false;
   String? _error;
   String? _success;
 
@@ -76,6 +77,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _error = null;
+      _success = null;
+      _googleLoading = true;
+    });
+    try {
+      await context.read<AuthService>().signInWithGoogle(
+        displayName: _name.text.trim().isEmpty ? null : _name.text,
+        title: _title,
+        clinic: _clinic.text.trim().isEmpty ? null : _clinic.text,
+      );
+      if (mounted) Navigator.pop(context);
+    } on AuthException catch (e) {
+      setState(() => _error = e.message);
+    } catch (_) {
+      setState(() => _error = 'Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -113,6 +136,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   action: TextInputAction.next,
                 ),
               ]),
+              const SizedBox(height: 12),
+              _googleButton(
+                isDark: isDark,
+                loading: _googleLoading,
+                onPressed: _signInWithGoogle,
+              ),
               const SizedBox(height: 12),
               _section(isDark, 'Account', [
                 _field(
@@ -160,7 +189,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _loading ? null : _submit,
+                  onPressed: _loading || _googleLoading ? null : _submit,
                   child: _loading
                       ? const SizedBox(
                           width: 20,
@@ -308,6 +337,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
     ),
     onPressed: onTap,
   );
+
+  Widget _googleButton({
+    required bool isDark,
+    required bool loading,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      height: 48,
+      child: OutlinedButton.icon(
+        onPressed: loading || _loading ? null : onPressed,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+          side: BorderSide(
+            color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: loading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.g_mobiledata, size: 28),
+        label: const Text('Continue with Google'),
+      ),
+    );
+  }
 
   Widget _errorBox(String msg) {
     return Container(

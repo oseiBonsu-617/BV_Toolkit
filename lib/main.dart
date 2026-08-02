@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'theme.dart';
 import 'services/auth_service.dart';
@@ -18,6 +19,7 @@ import 'screens/tools/diagnosis_screen.dart';
 import 'screens/tools/reference_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/onboarding_screen.dart';
 
 bool _firebaseReady = false;
 
@@ -125,13 +127,87 @@ class BVToolkitApp extends StatelessWidget {
   }
 }
 
-class _AuthGate extends StatelessWidget {
+class _AuthGate extends StatefulWidget {
   const _AuthGate();
+
+  @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  static const _onboardingCompleteKey = 'onboarding_complete';
+  bool? _showOnboarding;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOnboardingState();
+  }
+
+  Future<void> _loadOnboardingState() async {
+    var complete = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      complete = prefs.getBool(_onboardingCompleteKey) ?? false;
+    } catch (_) {
+      complete = false;
+    }
+    if (mounted) setState(() => _showOnboarding = !complete);
+  }
+
+  Future<void> _finishOnboarding() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_onboardingCompleteKey, true);
+    } catch (_) {
+      // Onboarding is non-critical; continue to auth if local storage fails.
+    }
+    if (mounted) setState(() => _showOnboarding = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = context.watch<AuthService>().isLoggedIn;
-    return isLoggedIn ? const MainShell() : const LoginScreen();
+    if (isLoggedIn) return const MainShell();
+    final showOnboarding = _showOnboarding;
+    if (showOnboarding == null) return const _StartupSplash();
+    return showOnboarding
+        ? OnboardingScreen(
+            onComplete: _finishOnboarding,
+            onLogIn: _finishOnboarding,
+          )
+        : const LoginScreen();
+  }
+}
+
+class _StartupSplash extends StatelessWidget {
+  const _StartupSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.remove_red_eye_outlined, size: 42, color: kPrimary),
+              SizedBox(height: 14),
+              Text(
+                'BV Toolkit',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: 18),
+              SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../models/app_user.dart';
 import 'product_infra_service.dart';
@@ -33,6 +34,7 @@ class AuthService extends ChangeNotifier {
   final FirebaseFirestore? _firestore;
   StreamSubscription<firebase.User?>? _authSub;
   AppUser? _currentUser;
+  static Future<void>? _googleSignInInit;
 
   firebase.FirebaseAuth get _firebaseAuth =>
       _auth ?? firebase.FirebaseAuth.instance;
@@ -43,14 +45,14 @@ class AuthService extends ChangeNotifier {
 
   Future<void> init() async {
     final user = _firebaseAuth.currentUser;
-    _currentUser = user != null && user.emailVerified
+    _currentUser = user != null && _isUserReady(user)
         ? await _toAppUser(user)
         : null;
     await ProductInfraService.identifyUser(_currentUser?.id);
 
     _authSub?.cancel();
     _authSub = _firebaseAuth.authStateChanges().listen((user) async {
-      final next = user != null && user.emailVerified
+      final next = user != null && _isUserReady(user)
           ? await _toAppUser(user)
           : null;
       if (next?.id == _currentUser?.id &&
@@ -131,7 +133,7 @@ class AuthService extends ChangeNotifier {
       if (user == null) throw const AuthException('Could not sign in.');
       await user.reload();
       final refreshed = _firebaseAuth.currentUser ?? user;
-      if (!refreshed.emailVerified) {
+      if (!_isUserReady(refreshed)) {
         await refreshed.sendEmailVerification();
         await _firebaseAuth.signOut();
         throw const AuthException(
@@ -148,6 +150,47 @@ class AuthService extends ChangeNotifier {
       rethrow;
     } catch (_) {
       throw const AuthException('Could not sign in. Please try again.');
+    }
+  }
+
+  Future<void> signInWithGoogle({
+    String? displayName,
+    String? title,
+    String? clinic,
+  }) async {
+    try {
+      final credential = kIsWeb
+          ? await _firebaseAuth.signInWithPopup(firebase.GoogleAuthProvider())
+          : await _signInWithGoogleOnDevice();
+      final user = credential.user;
+      if (user == null) {
+        throw const AuthException('Could not sign in with Google.');
+      }
+      await user.reload();
+      final refreshed = _firebaseAuth.currentUser ?? user;
+      await _saveGoogleProfile(
+        refreshed,
+        displayName: displayName,
+        title: title,
+        clinic: clinic,
+      );
+      _currentUser = await _toAppUser(refreshed);
+      await ProductInfraService.identifyUser(_currentUser?.id);
+      await ProductInfraService.track(
+        'login_success',
+        parameters: const {'method': 'google'},
+      );
+      notifyListeners();
+    } on GoogleSignInException catch (e) {
+      throw AuthException(_messageForGoogle(e));
+    } on firebase.FirebaseAuthException catch (e) {
+      throw AuthException(_messageFor(e));
+    } on AuthException {
+      rethrow;
+    } catch (_) {
+      throw const AuthException(
+        'Could not sign in with Google. Please try again.',
+      );
     }
   }
 
@@ -187,6 +230,7 @@ class AuthService extends ChangeNotifier {
 
   Future<void> signOut() async {
     try {
+      await _signOutFromGoogle();
       await _firebaseAuth.signOut();
       await ProductInfraService.track('logout');
     } finally {
@@ -295,6 +339,87 @@ class AuthService extends ChangeNotifier {
     }, SetOptions(merge: true));
   }
 
+  Future<firebase.UserCredential> _signInWithGoogleOnDevice() async {
+    await _ensureGoogleSignInInitialized();
+    if (!GoogleSignIn.instance.supportsAuthenticate()) {
+      throw const AuthException(
+        'Google sign-in is not available on this device.',
+      );
+    }
+
+    final googleUser = await GoogleSignIn.instance.authenticate();
+    final googleAuth = googleUser.authentication;
+    if (googleAuth.idToken == null) {
+      throw const AuthException('Google did not return an ID token.');
+    }
+
+    final credential = firebase.GoogleAuthProvider.credential(
+      idToken: googleAuth.idToken,
+    );
+    return _firebaseAuth.signInWithCredential(credential);
+  }
+
+  Future<void> _ensureGoogleSignInInitialized() {
+    return _googleSignInInit ??= GoogleSignIn.instance.initialize();
+  }
+
+  Future<void> _signOutFromGoogle() async {
+    final init = _googleSignInInit;
+    if (init == null || kIsWeb) return;
+    try {
+      await init;
+      await GoogleSignIn.instance.signOut();
+    } catch (_) {
+      // Firebase sign-out is the source of truth; Google sign-out is best effort.
+    }
+  }
+
+  Future<void> _saveGoogleProfile(
+    firebase.User user, {
+    String? displayName,
+    String? title,
+    String? clinic,
+  }) async {
+    final ref = _db.collection('users').doc(user.uid);
+    final doc = await ref.get();
+    final data = doc.data() ?? const <String, dynamic>{};
+
+    final name =
+        _string(displayName) ??
+        (doc.exists ? _string(data['displayName']) : null) ??
+        user.displayName?.trim() ??
+        user.email?.split('@').first ??
+        'Clinician';
+    final titleValue = _string(title);
+    final clinicValue = _string(clinic);
+
+    final updates = <String, Object?>{
+      'email': user.email ?? _string(data['email']) ?? '',
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    if (!doc.exists ||
+        _string(displayName) != null ||
+        _string(data['displayName']) == null) {
+      updates['displayName'] = name;
+    }
+    if (!doc.exists || titleValue != null) {
+      updates['title'] = titleValue ?? _string(data['title']) ?? '';
+    }
+    if (!doc.exists || clinicValue != null) {
+      updates['clinic'] = clinicValue ?? _string(data['clinic']) ?? '';
+    }
+
+    await ref.set(updates, SetOptions(merge: true));
+  }
+
+  bool _isUserReady(firebase.User user) {
+    return user.emailVerified ||
+        user.providerData.any(
+          (provider) =>
+              provider.providerId == firebase.GoogleAuthProvider.PROVIDER_ID,
+        );
+  }
+
   String? _string(Object? value) {
     if (value is! String) return null;
     final trimmed = value.trim();
@@ -311,8 +436,28 @@ class AuthService extends ChangeNotifier {
       'invalid-credential' => 'Invalid email or password.',
       'weak-password' => 'Choose a stronger password.',
       'requires-recent-login' => 'Please sign in again before changing this.',
+      'account-exists-with-different-credential' =>
+        'An account already exists with this email. Sign in with your original method first.',
+      'credential-already-in-use' =>
+        'This Google account is already linked to another user.',
+      'popup-blocked' => 'Allow pop-ups to continue with Google sign-in.',
+      'popup-closed-by-user' => 'Google sign-in was cancelled.',
       'too-many-requests' => 'Too many attempts. Please try again later.',
       _ => e.message ?? 'Authentication failed. Please try again.',
+    };
+  }
+
+  String _messageForGoogle(GoogleSignInException e) {
+    return switch (e.code) {
+      GoogleSignInExceptionCode.canceled => 'Google sign-in was cancelled.',
+      GoogleSignInExceptionCode.interrupted =>
+        'Google sign-in was interrupted. Please try again.',
+      GoogleSignInExceptionCode.clientConfigurationError ||
+      GoogleSignInExceptionCode.providerConfigurationError =>
+        'Google sign-in is not configured correctly for this app.',
+      GoogleSignInExceptionCode.uiUnavailable =>
+        'Google sign-in is not available on this device.',
+      _ => e.description ?? 'Could not sign in with Google. Please try again.',
     };
   }
 }

@@ -15,6 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _password = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
+  bool _googleLoading = false;
   String? _error;
 
   @override
@@ -40,6 +41,22 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _error = 'Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _error = null;
+      _googleLoading = true;
+    });
+    try {
+      await context.read<AuthService>().signInWithGoogle();
+    } on AuthException catch (e) {
+      setState(() => _error = e.message);
+    } catch (_) {
+      setState(() => _error = 'Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
     }
   }
 
@@ -98,6 +115,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     label: 'Sign In',
                     loading: _loading,
                     onPressed: _submit,
+                  ),
+                  const SizedBox(height: 16),
+                  _divider(isDark),
+                  const SizedBox(height: 16),
+                  _googleButton(
+                    loading: _googleLoading,
+                    onPressed: _signInWithGoogle,
                   ),
                 ]),
                 const SizedBox(height: 16),
@@ -260,7 +284,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return SizedBox(
       height: 48,
       child: ElevatedButton(
-        onPressed: loading ? null : onPressed,
+        onPressed: loading || _googleLoading ? null : onPressed,
         child: loading
             ? const SizedBox(
                 width: 20,
@@ -271,6 +295,43 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               )
             : Text(label),
+      ),
+    );
+  }
+
+  Widget _divider(bool isDark) {
+    final color = isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA);
+    return Row(
+      children: [
+        Expanded(child: Divider(height: 1, color: color)),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            'or',
+            style: TextStyle(fontSize: 12, color: Color(0xFF8E8E93)),
+          ),
+        ),
+        Expanded(child: Divider(height: 1, color: color)),
+      ],
+    );
+  }
+
+  Widget _googleButton({
+    required bool loading,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      height: 48,
+      child: OutlinedButton.icon(
+        onPressed: loading || _loading ? null : onPressed,
+        icon: loading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.g_mobiledata, size: 28),
+        label: const Text('Continue with Google'),
       ),
     );
   }
