@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 const kPrimary = Color(0xFF1D9E75);
@@ -103,8 +105,16 @@ ThemeData buildTheme(Brightness brightness) {
 }
 
 // ─── Page route with slide + fade transition ────────────────────────────────
+// On iOS a CupertinoPageRoute is used instead so the edge back-swipe works.
 
-Route<T> appRoute<T>(Widget page) => PageRouteBuilder<T>(
+Route<T> appRoute<T>(Widget page) {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return CupertinoPageRoute<T>(builder: (_) => page);
+  }
+  return _slideFadeRoute<T>(page);
+}
+
+Route<T> _slideFadeRoute<T>(Widget page) => PageRouteBuilder<T>(
   pageBuilder: (context, animation, secondaryAnimation) => page,
   transitionsBuilder: (context, animation, secondaryAnimation, child) {
     final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);

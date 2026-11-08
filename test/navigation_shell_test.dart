@@ -164,6 +164,23 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
   });
 
+  testWidgets(
+    'iOS edge swipe pops a pushed tool inside the Tools tab',
+    (tester) async {
+      await pumpShell(tester);
+      await tapTab(tester, 'Tools');
+      await tapKey(tester, 'tool-row-phoria');
+      expect(find.byKey(const Key('tool-chip-phoria')), findsOneWidget);
+      await tester.dragFrom(const Offset(5, 300), const Offset(400, 0));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tool-row-phoria')), findsOneWidget);
+      expect(find.byKey(const Key('tool-chip-phoria')), findsNothing);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(selectedTab(tester), 2);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+  );
+
   testWidgets('remount starts fresh', (tester) async {
     await pumpShell(tester);
     await tapTab(tester, 'Tools');
