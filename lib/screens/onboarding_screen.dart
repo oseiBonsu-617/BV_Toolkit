@@ -142,10 +142,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             : const Color(0xFF6E6E73),
                                       ),
                                     ),
-                                    const TextSpan(
+                                    TextSpan(
                                       text: 'Log In',
                                       style: TextStyle(
-                                        color: kPrimary,
+                                        color: primaryOf(context),
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),

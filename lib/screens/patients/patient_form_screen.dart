@@ -118,10 +118,10 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
           TextButton(
             onPressed: _loading ? null : _submit,
             child: _loading
-                ? const SizedBox(width: 18, height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: kPrimary))
+                ? SizedBox(width: 18, height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: primaryOf(context)))
                 : Text(_isEdit ? 'Save' : 'Add',
-                    style: const TextStyle(color: kPrimary, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: primaryOf(context), fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -275,7 +275,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
           ),
         TextButton(
           onPressed: _pickDob,
-          child: Text(_dob != null ? 'Change' : 'Set', style: const TextStyle(color: kPrimary)),
+          child: Text(_dob != null ? 'Change' : 'Set', style: TextStyle(color: primaryOf(context))),
         ),
       ]),
     ]);

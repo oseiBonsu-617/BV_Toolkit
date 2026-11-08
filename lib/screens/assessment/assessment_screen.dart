@@ -399,19 +399,19 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.track_changes_outlined,
-                            color: kPrimary,
+                            color: primaryOf(context),
                             size: 18,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               result.primaryImpression,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
-                                color: kPrimary,
+                                color: primaryOf(context),
                               ),
                             ),
                           ),

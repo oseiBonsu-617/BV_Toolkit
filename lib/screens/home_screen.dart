@@ -200,7 +200,7 @@ class HomeScreen extends StatelessWidget {
                 backgroundColor: kPrimary.withValues(alpha: 0.12),
                 child: Text(
                   p.initials,
-                  style: const TextStyle(fontSize: 12, color: kPrimary),
+                  style: TextStyle(fontSize: 12, color: primaryOf(context)),
                 ),
               ),
               title: Text(p.fullName, style: const TextStyle(fontSize: 14)),
@@ -251,7 +251,7 @@ class HomeScreen extends StatelessWidget {
     final style = TextStyle(
       fontSize: 11,
       fontWeight: highlight ? FontWeight.w500 : FontWeight.normal,
-      color: highlight ? kPrimary : null,
+      color: highlight ? primaryOf(context) : null,
     );
     if (colSpan2) {
       return TableRow(
@@ -299,7 +299,7 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(s.icon, size: 20, color: kPrimary),
+            Icon(s.icon, size: 20, color: primaryOf(context)),
             const SizedBox(height: 6),
             Text(
               s.name,

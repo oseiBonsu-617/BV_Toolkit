@@ -405,18 +405,18 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
           TextButton(
             onPressed: _saving ? null : _save,
             child: _saving
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: kPrimary,
+                      color: primaryOf(context),
                     ),
                   )
-                : const Text(
+                : Text(
                     'Save',
                     style: TextStyle(
-                      color: kPrimary,
+                      color: primaryOf(context),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -594,7 +594,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
             childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
             leading: Icon(
               icon,
-              color: isRec ? kPrimary : const Color(0xFF8E8E93),
+              color: isRec ? primaryOf(context) : const Color(0xFF8E8E93),
               size: 18,
             ),
             title: Row(
@@ -614,7 +614,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
                 ],
               ],
             ),
-            iconColor: kPrimary,
+            iconColor: primaryOf(context),
             collapsedIconColor: const Color(0xFF8E8E93),
             children: [child],
           ),
@@ -635,14 +635,14 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.track_changes_outlined, size: 15, color: kPrimary),
+          Icon(Icons.track_changes_outlined, size: 15, color: primaryOf(context)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Assessment: ${widget.assessmentImpression}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: kPrimary,
+                color: primaryOf(context),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -673,7 +673,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
             ),
             TextButton(
               onPressed: _pickDate,
-              child: const Text('Change', style: TextStyle(color: kPrimary)),
+              child: Text('Change', style: TextStyle(color: primaryOf(context))),
             ),
           ],
         ),

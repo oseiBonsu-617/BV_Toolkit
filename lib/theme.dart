@@ -72,7 +72,7 @@ ThemeData buildTheme(Brightness brightness) {
       indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: kPrimary, size: 22);
+          return IconThemeData(color: isDark ? kPrimaryOnDark : kPrimary, size: 22);
         }
         return IconThemeData(
           color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
@@ -81,7 +81,11 @@ ThemeData buildTheme(Brightness brightness) {
       }),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: kPrimary);
+          return TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: isDark ? kPrimaryOnDark : kPrimary,
+          );
         }
         return const TextStyle(fontSize: 10, color: Color(0xFF8E8E93));
       }),

@@ -1292,7 +1292,7 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
               vertical: 4,
             ),
             childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-            iconColor: kPrimary,
+            iconColor: primaryOf(context),
             collapsedIconColor: const Color(0xFF8E8E93),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1406,10 +1406,10 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.medical_services_outlined,
                             size: 13,
-                            color: kPrimary,
+                            color: primaryOf(context),
                           ),
                           const SizedBox(width: 6),
                           Expanded(

@@ -160,7 +160,7 @@ class ProfileScreen extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(children: [
-          Icon(icon, size: 18, color: kPrimary),
+          Icon(icon, size: 18, color: primaryOf(context)),
           const SizedBox(width: 12),
           Expanded(child: Text(label, style: const TextStyle(fontSize: 14))),
           const Icon(Icons.chevron_right, size: 18, color: Color(0xFF8E8E93)),

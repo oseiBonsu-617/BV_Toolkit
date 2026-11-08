@@ -38,7 +38,7 @@ class ToolsHubScreen extends StatelessWidget {
                 child: ListTile(
                   key: Key('tool-row-${t.id}'),
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(t.icon, color: kPrimary),
+                  leading: Icon(t.icon, color: primaryOf(context)),
                   title: Text(t.name),
                   subtitle: Text(t.description),
                   trailing: const Icon(Icons.chevron_right),

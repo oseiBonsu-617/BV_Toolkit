@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -41,8 +39,8 @@ Future<void> _pumpWelcome(
 /// Signs in by notifying listeners first (as Firebase's auth-state stream
 /// does) and only completes the sign-in call [tail] later.
 class _FakeAuth extends AuthService {
-  _FakeAuth({this.tail = const Duration(milliseconds: 120)});
-  final Duration tail;
+  // Firebase's auth-state listener notifies before the sign-in call returns.
+  static const tail = Duration(milliseconds: 120);
   bool _signedIn = false;
 
   @override

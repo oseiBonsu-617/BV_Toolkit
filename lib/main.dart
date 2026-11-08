@@ -200,13 +200,13 @@ class _StartupSplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: SafeArea(
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.remove_red_eye_outlined, size: 42, color: kPrimary),
+              Icon(Icons.remove_red_eye_outlined, size: 42, color: primaryOf(context)),
               SizedBox(height: 14),
               Text(
                 'BV Toolkit',

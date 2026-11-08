@@ -44,10 +44,10 @@ class DiagnosisPlanView extends StatelessWidget {
           ),
           child: Text(
             plan.name,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: kPrimary,
+              color: primaryOf(context),
             ),
           ),
         ),
@@ -139,6 +139,7 @@ class DiagnosisPlanView extends StatelessWidget {
         // Patient advice
         const SizedBox(height: 2),
         _iconSection(
+          context,
           Icons.person_outline,
           'Patient advice',
           plan.patientAdvice,
@@ -146,6 +147,7 @@ class DiagnosisPlanView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         _iconSection(
+          context,
           Icons.event_outlined,
           'Review',
           plan.reviewSchedule,
@@ -202,11 +204,17 @@ class DiagnosisPlanView extends StatelessWidget {
     ),
   );
 
-  Widget _iconSection(IconData icon, String label, String content, Color muted) {
+  Widget _iconSection(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String content,
+    Color muted,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 14, color: kPrimary),
+        Icon(icon, size: 14, color: primaryOf(context)),
         const SizedBox(width: 6),
         Expanded(
           child: Column(
@@ -214,10 +222,10 @@ class DiagnosisPlanView extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: kPrimary,
+                  color: primaryOf(context),
                 ),
               ),
               const SizedBox(height: 2),

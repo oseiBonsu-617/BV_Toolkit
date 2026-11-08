@@ -164,7 +164,7 @@ class CardTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: kPrimary),
+          Icon(icon, size: 16, color: primaryOf(context)),
           const SizedBox(width: 6),
           Text(
             text,
@@ -258,7 +258,7 @@ class SegmentedControl extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: isOn ? FontWeight.w500 : FontWeight.normal,
                     color: isOn
-                        ? kPrimary
+                        ? primaryOf(context)
                         : (isDark
                               ? const Color(0xFF8E8E93)
                               : const Color(0xFF6E6E73)),

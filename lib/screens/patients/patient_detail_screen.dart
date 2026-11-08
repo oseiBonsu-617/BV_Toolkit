@@ -104,7 +104,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       leading: Container(
         width: 40, height: 40,
         decoration: BoxDecoration(color: kPrimary.withAlpha(20), shape: BoxShape.circle),
-        child: Icon(icon, size: 20, color: kPrimary),
+        child: Icon(icon, size: 20, color: primaryOf(context)),
       ),
       title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
@@ -306,7 +306,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
             Container(
               width: 36, height: 36,
               decoration: BoxDecoration(color: kPrimary.withAlpha(25), shape: BoxShape.circle),
-              child: const Icon(Icons.assignment_outlined, size: 18, color: kPrimary),
+              child: Icon(Icons.assignment_outlined, size: 18, color: primaryOf(context)),
             ),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -348,7 +348,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         radius: 40,
         backgroundColor: kPrimary.withAlpha(30),
         child: Text(p.initials,
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: kPrimary)),
+            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: primaryOf(context))),
       ),
       const SizedBox(height: 12),
       Text(p.fullName,
@@ -371,7 +371,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       borderRadius: BorderRadius.circular(999),
     ),
     child: Text(text,
-        style: const TextStyle(fontSize: 12, color: kPrimary, fontWeight: FontWeight.w500)),
+        style: TextStyle(fontSize: 12, color: primaryOf(context), fontWeight: FontWeight.w500)),
   );
 
   // ─── Info sections ─────────────────────────────────────────────────────────

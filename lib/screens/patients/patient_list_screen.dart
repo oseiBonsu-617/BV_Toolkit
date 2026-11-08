@@ -243,10 +243,10 @@ class _PatientListScreenState extends State<PatientListScreen> {
     backgroundColor: kPrimary.withAlpha(30),
     child: Text(
       p.initials,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w600,
-        color: kPrimary,
+        color: primaryOf(context),
       ),
     ),
   );

@@ -80,7 +80,7 @@ class ShortcutGrid extends StatelessWidget {
                           Icons.check_circle,
                           key: Key('shortcut-check-${s.id}'),
                           size: 18,
-                          color: kPrimary,
+                          color: primaryOf(context),
                         ),
                       ),
                     Center(
