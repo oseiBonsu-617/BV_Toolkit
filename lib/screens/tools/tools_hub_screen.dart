@@ -42,9 +42,9 @@ class ToolsHubScreen extends StatelessWidget {
                   title: Text(t.name),
                   subtitle: Text(t.description),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.of(context).push(
-                    appRoute(ToolWorkspaceScreen(initialToolId: t.id)),
-                  ),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).push(ToolWorkspaceScreen.route(t.id)),
                 ),
               ),
           ],

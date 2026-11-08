@@ -301,4 +301,18 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets('openTool switches the open workspace and keeps typed values', (
+    tester,
+  ) async {
+    await pumpShell(tester);
+    await typeInPhoriaAndSwitchAway(tester);
+    await tapTab(tester, 'Home');
+    shellScope(tester).openTool('graphical');
+    await tester.pumpAndSettle();
+    expect(selectedTab(tester), 2);
+    expect(chipSelected(tester, 'graphical'), isTrue);
+    await tapKey(tester, 'tool-chip-phoria');
+    expect(find.text('7'), findsOneWidget);
+  });
 }

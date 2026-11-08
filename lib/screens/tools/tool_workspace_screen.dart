@@ -28,11 +28,30 @@ class ToolWorkspaceScreen extends StatefulWidget {
   const ToolWorkspaceScreen({super.key, required this.initialToolId});
   final String initialToolId;
 
+  /// Name of the route [route] builds.
+  static const routeName = 'tool-workspace';
+
+  /// A page route to a workspace opened on [initialToolId]. Its settings
+  /// carry the workspace's key, so the shell can switch it in place.
+  static Route<void> route(String initialToolId) {
+    final key = GlobalKey<ToolWorkspaceScreenState>();
+    return appRoute(
+      ToolWorkspaceScreen(key: key, initialToolId: initialToolId),
+      settings: RouteSettings(name: routeName, arguments: key),
+    );
+  }
+
+  /// The workspace shown by a [route] built by [ToolWorkspaceScreen.route].
+  static ToolWorkspaceScreenState? stateOf(Route<dynamic> route) {
+    final key = route.settings.arguments;
+    return key is GlobalKey<ToolWorkspaceScreenState> ? key.currentState : null;
+  }
+
   @override
-  State<ToolWorkspaceScreen> createState() => _ToolWorkspaceScreenState();
+  State<ToolWorkspaceScreen> createState() => ToolWorkspaceScreenState();
 }
 
-class _ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
+class ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
   final _graphicalKey = GlobalKey<GraphicalAnalysisBodyState>();
   late int _index;
 
@@ -43,7 +62,8 @@ class _ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
     _index = i < 0 ? 0 : i;
   }
 
-  void _switchTo(String id) {
+  /// Shows the tool [id]; every tool keeps what was typed into it.
+  void switchTo(String id) {
     final i = kTools.indexWhere((t) => t.id == id);
     if (i >= 0 && i != _index) setState(() => _index = i);
   }
@@ -92,14 +112,14 @@ class _ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
                   label: Text(t.shortLabel),
                   selected: i == _index,
                   selectedColor: kPrimary.withValues(alpha: 0.15),
-                  onSelected: (_) => _switchTo(t.id),
+                  onSelected: (_) => switchTo(t.id),
                 );
               },
             ),
           ),
           Expanded(
             child: ToolWorkspaceScope(
-              switchTo: _switchTo,
+              switchTo: switchTo,
               child: IndexedStack(
                 index: _index,
                 children: [

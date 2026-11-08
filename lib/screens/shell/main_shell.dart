@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../theme.dart';
 import '../home_screen.dart';
 import '../patients/patient_detail_screen.dart';
 import '../patients/patient_list_screen.dart';
@@ -78,10 +77,22 @@ class _MainShellState extends State<MainShell> {
     if (await _popToRoot(tab)) _navigator(tab)?.push(route);
   }
 
-  Future<void> _openTool(String toolId) => _openIn(
-    ShellTab.tools,
-    appRoute(ToolWorkspaceScreen(initialToolId: toolId)),
-  );
+  /// Shows [toolId] in the Tools tab. An open workspace is switched in place
+  /// (after popping anything above it), so values typed into its tools stay
+  /// until the user goes back to the Tools list; otherwise one is pushed.
+  Future<void> _openTool(String toolId) async {
+    final workspace = _stacks[ShellTab.tools].routes.reversed
+        .where((r) => r.settings.name == ToolWorkspaceScreen.routeName)
+        .firstOrNull;
+    if (workspace == null) {
+      await _openIn(ShellTab.tools, ToolWorkspaceScreen.route(toolId));
+      return;
+    }
+    _openTab(ShellTab.tools);
+    if (await _popUntil(ShellTab.tools, (r) => identical(r, workspace))) {
+      ToolWorkspaceScreen.stateOf(workspace)?.switchTo(toolId);
+    }
+  }
 
   /// Shows the patient's detail in the Patients tab. If that patient is
   /// already open there (the detail or a screen of their flow above it), the
