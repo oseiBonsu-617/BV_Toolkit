@@ -77,44 +77,98 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
 
   bool _saving = false;
 
+  /// Set once the session is stored, so leaving no longer asks to discard.
+  bool _saved = false;
+
+  /// Whether the discard dialog is showing, so a second back press can't
+  /// stack another one.
+  bool _confirmingDiscard = false;
+
   final _scroll = ScrollController();
   DiagnosisPlan? _plan;
   bool _diagnosed = false;
 
+  /// Every text field on the form, the visit note included.
+  late final List<TextEditingController> _fields = [
+    _noteCtrl,
+    _phDist,
+    _phNear,
+    _ipd,
+    _ndist,
+    _gp1,
+    _gp2,
+    _glens,
+    _nbrk,
+    _nrec,
+    _biBlurD,
+    _biBrkD,
+    _biRecD,
+    _boBlurD,
+    _boBrkD,
+    _boRecD,
+    _biBlurN,
+    _biBrkN,
+    _biRecN,
+    _boBlurN,
+    _boBrkN,
+    _boRecN,
+    _dxAge,
+    _dxAmp,
+    _dxFacBin,
+    _dxMem,
+  ];
+
+  /// What each field held when the form opened (a few have defaults).
+  late final Map<TextEditingController, String> _initialText;
+
+  late final Listenable _edits = Listenable.merge(_fields);
+
+  @override
+  void initState() {
+    super.initState();
+    _initialText = {for (final c in _fields) c: c.text.trim()};
+  }
+
   @override
   void dispose() {
     _scroll.dispose();
-    for (final c in [
-      _noteCtrl,
-      _phDist,
-      _phNear,
-      _ipd,
-      _ndist,
-      _gp1,
-      _gp2,
-      _glens,
-      _nbrk,
-      _nrec,
-      _biBlurD,
-      _biBrkD,
-      _biRecD,
-      _boBlurD,
-      _boBrkD,
-      _boRecD,
-      _biBlurN,
-      _biBrkN,
-      _biRecN,
-      _boBlurN,
-      _boBrkN,
-      _boRecN,
-      _dxAge,
-      _dxAmp,
-      _dxFacBin,
-      _dxMem,
-    ]) {
+    for (final c in _fields) {
       c.dispose();
     }
     super.dispose();
+  }
+
+  /// True when the user has entered anything that hasn't been saved yet.
+  bool get _hasUnsavedInput =>
+      !_saved &&
+      (_dxFacFail.isNotEmpty ||
+          _fields.any((c) => c.text.trim() != _initialText[c]));
+
+  /// Called when a pop was blocked because of unsaved input.
+  Future<void> _confirmDiscard() async {
+    // A save in flight pops (or reports its error) on its own.
+    if (_saving || _confirmingDiscard) return;
+    _confirmingDiscard = true;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard this session?'),
+        content: const Text("The findings you entered haven't been saved."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Discard', style: TextStyle(color: kBadText)),
+          ),
+        ],
+      ),
+    );
+    _confirmingDiscard = false;
+    if (discard != true || !mounted) return;
+    if (ModalRoute.of(context)?.isCurrent ?? false) Navigator.pop(context);
   }
 
   double? _v(TextEditingController c) => double.tryParse(c.text.trim());
@@ -281,6 +335,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
         visitNote: _noteCtrl.text,
         data: data,
       );
+      _saved = true;
       if (mounted) await context.read<PatientService>().touch(widget.patientId);
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -328,7 +383,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
+    final form = Scaffold(
       backgroundColor: isDark
           ? const Color(0xFF0F0F0F)
           : const Color(0xFFF2F2F7),
@@ -434,6 +489,18 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
           const SizedBox(height: 24),
         ],
       ),
+    );
+    // Rebuilds only the guard as fields change, not the whole form.
+    return ListenableBuilder(
+      listenable: _edits,
+      builder: (context, child) => PopScope(
+        canPop: !_hasUnsavedInput,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _confirmDiscard();
+        },
+        child: child!,
+      ),
+      child: form,
     );
   }
 

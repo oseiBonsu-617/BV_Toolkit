@@ -108,15 +108,17 @@ ThemeData buildTheme(Brightness brightness) {
 
 // ─── Page route with slide + fade transition ────────────────────────────────
 // On iOS a CupertinoPageRoute is used instead so the edge back-swipe works.
+// [settings] lets the shell recognise a route on a tab's stack.
 
-Route<T> appRoute<T>(Widget page) {
+Route<T> appRoute<T>(Widget page, {RouteSettings? settings}) {
   if (defaultTargetPlatform == TargetPlatform.iOS) {
-    return CupertinoPageRoute<T>(builder: (_) => page);
+    return CupertinoPageRoute<T>(builder: (_) => page, settings: settings);
   }
-  return _slideFadeRoute<T>(page);
+  return _slideFadeRoute<T>(page, settings);
 }
 
-Route<T> _slideFadeRoute<T>(Widget page) => PageRouteBuilder<T>(
+Route<T> _slideFadeRoute<T>(Widget page, RouteSettings? settings) => PageRouteBuilder<T>(
+  settings: settings,
   pageBuilder: (context, animation, secondaryAnimation) => page,
   transitionsBuilder: (context, animation, secondaryAnimation, child) {
     final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);

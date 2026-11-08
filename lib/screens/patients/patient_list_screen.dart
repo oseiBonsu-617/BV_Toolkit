@@ -29,10 +29,8 @@ class _PatientListScreenState extends State<PatientListScreen> {
     rootNavigator: true,
   ).push(appRoute(const PatientFormScreen()));
 
-  void _openDetail(Patient patient) => Navigator.push(
-    context,
-    appRoute(PatientDetailScreen(patientId: patient.id)),
-  );
+  void _openDetail(Patient patient) =>
+      Navigator.push(context, PatientDetailScreen.route(patient.id));
 
   Future<bool?> _confirmDelete(Patient p) => showDialog<bool>(
     context: context,

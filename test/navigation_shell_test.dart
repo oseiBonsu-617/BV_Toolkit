@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bv_toolkit/models/test_session.dart';
 import 'package:bv_toolkit/screens/home_screen.dart';
+import 'package:bv_toolkit/screens/patients/patient_detail_screen.dart';
 import 'package:bv_toolkit/screens/patients/patient_form_screen.dart';
+import 'package:bv_toolkit/screens/patients/patient_list_screen.dart';
 import 'package:bv_toolkit/screens/profile_screen.dart';
 import 'package:bv_toolkit/screens/shell/main_shell.dart';
 import 'package:bv_toolkit/screens/shell/shell_scope.dart';
@@ -12,6 +15,13 @@ import 'package:bv_toolkit/services/patient_service.dart';
 import 'package:bv_toolkit/services/preferences_service.dart';
 import 'package:bv_toolkit/services/session_service.dart';
 import 'package:bv_toolkit/theme.dart';
+
+/// sqflite does not run under flutter test; the patient detail screen loads
+/// sessions on open, so hand it an empty list instead.
+class _NoDbSessionService extends SessionService {
+  @override
+  Future<List<TestSession>> forPatient(String patientId) async => [];
+}
 
 Future<void> pumpShell(WidgetTester tester) async {
   tester.view.physicalSize = const Size(800, 4000);
@@ -23,7 +33,9 @@ Future<void> pumpShell(WidgetTester tester) async {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => PatientService()),
-        ChangeNotifierProvider(create: (_) => SessionService()),
+        ChangeNotifierProvider<SessionService>(
+          create: (_) => _NoDbSessionService(),
+        ),
         ChangeNotifierProvider(create: (_) => PreferencesService()..load()),
       ],
       child: MaterialApp(
@@ -53,6 +65,23 @@ int selectedTab(WidgetTester tester) =>
 
 bool chipSelected(WidgetTester tester, String id) =>
     tester.widget<ChoiceChip>(find.byKey(Key('tool-chip-$id'))).selected;
+
+ShellScope shellScope(WidgetTester tester) =>
+    ShellScope.of(tester.element(find.byType(NavigationBar)));
+
+/// Pushes [page] on the Patients tab's navigator (the tab must be showing).
+void pushOnPatients(WidgetTester tester, Widget page) {
+  final navigator = Navigator.of(
+    tester.element(find.byType(PatientListScreen, skipOffstage: false)),
+  );
+  navigator.push(MaterialPageRoute<void>(builder: (_) => page));
+}
+
+/// A screen whose route refuses to be popped, like an unsaved form.
+const guardedPage = PopScope(
+  canPop: false,
+  child: Scaffold(body: Text('guarded screen')),
+);
 
 /// Opens Phoria from the Tools tab, types 7, goes Home and back to Tools.
 Future<void> typeInPhoriaAndSwitchAway(WidgetTester tester) async {
@@ -191,5 +220,85 @@ void main() {
     await tapTab(tester, 'Tools');
     expect(find.byKey(const Key('tool-row-phoria')), findsOneWidget);
     expect(find.byKey(const Key('tool-chip-phoria')), findsNothing);
+  });
+
+  testWidgets('openPatient pushes the detail screen in the Patients tab', (
+    tester,
+  ) async {
+    await pumpShell(tester);
+    shellScope(tester).openPatient('p1');
+    await tester.pumpAndSettle();
+    expect(selectedTab(tester), 1);
+    expect(find.byType(PatientDetailScreen), findsOneWidget);
+    // No patients load under flutter test, so the detail shows its fallback.
+    expect(find.text('Patient not found.'), findsOneWidget);
+  });
+
+  testWidgets('openPatient for the patient already open just switches tab', (
+    tester,
+  ) async {
+    await pumpShell(tester);
+    shellScope(tester).openPatient('p1');
+    await tester.pumpAndSettle();
+    pushOnPatients(tester, const Scaffold(body: Text('within p1 flow')));
+    await tester.pumpAndSettle();
+    await tapTab(tester, 'Home');
+    shellScope(tester).openPatient('p1');
+    await tester.pumpAndSettle();
+    expect(selectedTab(tester), 1);
+    expect(find.text('within p1 flow'), findsOneWidget);
+    expect(
+      find.byType(PatientDetailScreen, skipOffstage: false),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('re-tapping Patients does not pop a guarded route', (
+    tester,
+  ) async {
+    await pumpShell(tester);
+    await tapTab(tester, 'Patients');
+    pushOnPatients(tester, guardedPage);
+    await tester.pumpAndSettle();
+    await tapTab(tester, 'Patients');
+    expect(find.text('guarded screen'), findsOneWidget);
+  });
+
+  testWidgets('openPatient does not pop a guarded route or push over it', (
+    tester,
+  ) async {
+    await pumpShell(tester);
+    await tapTab(tester, 'Patients');
+    pushOnPatients(tester, guardedPage);
+    await tester.pumpAndSettle();
+    await tapTab(tester, 'Home');
+    shellScope(tester).openPatient('other');
+    await tester.pumpAndSettle();
+    expect(selectedTab(tester), 1);
+    expect(find.text('guarded screen'), findsOneWidget);
+    expect(
+      find.byType(PatientDetailScreen, skipOffstage: false),
+      findsNothing,
+    );
+  });
+
+  testWidgets('openTool does not pop a guarded route or push over it', (
+    tester,
+  ) async {
+    await pumpShell(tester);
+    await tapTab(tester, 'Tools');
+    Navigator.of(
+      tester.element(find.byKey(const Key('tool-row-phoria'))),
+    ).push(MaterialPageRoute<void>(builder: (_) => guardedPage));
+    await tester.pumpAndSettle();
+    await tapTab(tester, 'Home');
+    shellScope(tester).openTool('vergence');
+    await tester.pumpAndSettle();
+    expect(selectedTab(tester), 2);
+    expect(find.text('guarded screen'), findsOneWidget);
+    expect(
+      find.byKey(const Key('tool-chip-vergence'), skipOffstage: false),
+      findsNothing,
+    );
   });
 }

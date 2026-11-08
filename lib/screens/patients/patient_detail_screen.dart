@@ -15,6 +15,16 @@ import 'session_detail_screen.dart';
 class PatientDetailScreen extends StatefulWidget {
   final String patientId;
   const PatientDetailScreen({super.key, required this.patientId});
+
+  /// Name of the route [route] builds; its arguments are the patient id.
+  static const routeName = 'patient-detail';
+
+  /// A page route to this patient's detail that the shell can recognise.
+  static Route<void> route(String patientId) => appRoute(
+        PatientDetailScreen(patientId: patientId),
+        settings: RouteSettings(name: routeName, arguments: patientId),
+      );
+
   @override
   State<PatientDetailScreen> createState() => _PatientDetailScreenState();
 }
