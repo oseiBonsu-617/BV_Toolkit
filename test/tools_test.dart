@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:bv_toolkit/config/tools.dart';
 import 'package:bv_toolkit/screens/tools/tools_hub_screen.dart';
+import 'package:bv_toolkit/services/auth_service.dart';
 import 'package:bv_toolkit/theme.dart';
 
 Future<void> pumpHub(WidgetTester t) async {
@@ -9,9 +11,12 @@ Future<void> pumpHub(WidgetTester t) async {
   t.view.devicePixelRatio = 1.0;
   addTearDown(t.view.reset);
   await t.pumpWidget(
-    MaterialApp(
-      theme: buildTheme(Brightness.light),
-      home: const ToolsHubScreen(),
+    ChangeNotifierProvider(
+      create: (_) => AuthService(),
+      child: MaterialApp(
+        theme: buildTheme(Brightness.light),
+        home: const ToolsHubScreen(),
+      ),
     ),
   );
 }

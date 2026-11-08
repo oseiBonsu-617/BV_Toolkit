@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import '../widgets/profile_avatar_button.dart';
 import '../widgets/result_card.dart';
-import 'patients/patient_list_screen.dart';
+import 'shell/shell_scope.dart';
 
 class HomeScreen extends StatelessWidget {
-  final ValueChanged<int> onNavigate;
-  const HomeScreen({super.key, required this.onNavigate});
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,103 +14,132 @@ class HomeScreen extends StatelessWidget {
         ? const Color(0xFF38383A)
         : const Color(0xFFE5E5EA);
 
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CardTitle(
-                icon: Icons.table_chart_outlined,
-                text: "Morgan's norms",
-              ),
-              Table(
-                columnWidths: const {
-                  0: FlexColumnWidth(2),
-                  1: FlexColumnWidth(1.5),
-                  2: FlexColumnWidth(1.5),
-                },
-                border: TableBorder(
-                  horizontalInside: BorderSide(color: borderColor, width: 0.5),
-                  bottom: BorderSide(color: borderColor, width: 0.5),
-                ),
-                children: [
-                  _headerRow(['Test', 'Dist', 'Near'], context),
-                  _dataRow(
-                    ['Phoria', '1Δ exo', '3Δ exo'],
-                    context,
-                    highlight: true,
-                  ),
-                  _dataRow(['BI break', '7Δ', '21Δ'], context),
-                  _dataRow(['BO break', '19Δ', '21Δ'], context),
-                  _dataRow(
-                    ['NPC break', '≤ 5 cm', ''],
-                    context,
-                    highlight: true,
-                    colSpan2: true,
-                  ),
-                  _dataRow(
-                    ['Acc. amp.', 'Hofstetter', ''],
-                    context,
-                    colSpan2: true,
-                  ),
-                  _dataRow(['Acc. facility', 'OD/OS ≥13', 'Bin ≥11'], context),
-                  _dataRow(['MEM lag', '+0.25D', '+0.75D'], context),
-                ],
-              ),
-            ],
-          ),
-        ),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 1.5,
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _tile(
-              context,
-              Icons.remove_red_eye_outlined,
-              'Phoria & ratios',
-              'AC/A and CA/C',
-              1,
+            const Text('BV Toolkit'),
+            Text(
+              'Clinical suite',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.normal,
+                color: isDark
+                    ? const Color(0xFF8E8E93)
+                    : const Color(0xFF6E6E73),
+              ),
             ),
-            _tile(
-              context,
-              Icons.open_with,
-              'Vergence & NPC',
-              'Ranges vs. norms',
-              2,
-            ),
-            _tile(
-              context,
-              Icons.zoom_in_outlined,
-              'Accommodation',
-              'Norms & ranges',
-              3,
-            ),
-            _tile(
-              context,
-              Icons.balance_outlined,
-              'Analysis',
-              "Sheard's & Percival's",
-              4,
-            ),
-            _tile(
-              context,
-              Icons.medical_services_outlined,
-              'Diagnose',
-              'Ranked BV diagnosis',
-              5,
-              highlighted: true,
-              badge: 'New',
-            ),
-            _patientsTile(context),
           ],
         ),
-      ],
+        actions: const [ProfileAvatarButton()],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const CardTitle(
+                  icon: Icons.table_chart_outlined,
+                  text: "Morgan's norms",
+                ),
+                Table(
+                  columnWidths: const {
+                    0: FlexColumnWidth(2),
+                    1: FlexColumnWidth(1.5),
+                    2: FlexColumnWidth(1.5),
+                  },
+                  border: TableBorder(
+                    horizontalInside: BorderSide(
+                      color: borderColor,
+                      width: 0.5,
+                    ),
+                    bottom: BorderSide(color: borderColor, width: 0.5),
+                  ),
+                  children: [
+                    _headerRow(['Test', 'Dist', 'Near'], context),
+                    _dataRow(
+                      ['Phoria', '1Δ exo', '3Δ exo'],
+                      context,
+                      highlight: true,
+                    ),
+                    _dataRow(['BI break', '7Δ', '21Δ'], context),
+                    _dataRow(['BO break', '19Δ', '21Δ'], context),
+                    _dataRow(
+                      ['NPC break', '≤ 5 cm', ''],
+                      context,
+                      highlight: true,
+                      colSpan2: true,
+                    ),
+                    _dataRow(
+                      ['Acc. amp.', 'Hofstetter', ''],
+                      context,
+                      colSpan2: true,
+                    ),
+                    _dataRow([
+                      'Acc. facility',
+                      'OD/OS ≥13',
+                      'Bin ≥11',
+                    ], context),
+                    _dataRow(['MEM lag', '+0.25D', '+0.75D'], context),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 1.5,
+            children: [
+              _tile(
+                context,
+                Icons.remove_red_eye_outlined,
+                'Phoria & ratios',
+                'AC/A and CA/C',
+                'phoria',
+              ),
+              _tile(
+                context,
+                Icons.open_with,
+                'Vergence & NPC',
+                'Ranges vs. norms',
+                'vergence',
+              ),
+              _tile(
+                context,
+                Icons.zoom_in_outlined,
+                'Accommodation',
+                'Norms & ranges',
+                'accommodation',
+              ),
+              _tile(
+                context,
+                Icons.balance_outlined,
+                'Analysis',
+                "Sheard's & Percival's",
+                'analysis',
+              ),
+              _tile(
+                context,
+                Icons.medical_services_outlined,
+                'Diagnose',
+                'Ranked BV diagnosis',
+                'diagnose',
+                highlighted: true,
+                badge: 'New',
+              ),
+              _patientsTile(context),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -178,10 +207,7 @@ class HomeScreen extends StatelessWidget {
   Widget _patientsTile(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PatientListScreen()),
-      ),
+      onTap: () => ShellScope.of(context).openTab(ShellTab.patients),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -223,13 +249,13 @@ class HomeScreen extends StatelessWidget {
     IconData icon,
     String title,
     String desc,
-    int tab, {
+    String toolId, {
     bool highlighted = false,
     String? badge,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
-      onTap: () => onNavigate(tab),
+      onTap: () => ShellScope.of(context).openShortcut(toolId),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(

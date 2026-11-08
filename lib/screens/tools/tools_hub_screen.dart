@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/tools.dart';
 import '../../theme.dart';
+import '../../widgets/profile_avatar_button.dart';
 import '../../widgets/result_card.dart';
 import 'tool_workspace_screen.dart';
 
@@ -13,6 +14,7 @@ class ToolsHubScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Tools'),
         automaticallyImplyLeading: false,
+        actions: const [ProfileAvatarButton()],
       ),
       body: ListView(
         padding: const EdgeInsets.all(12),

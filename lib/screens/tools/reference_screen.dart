@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme.dart';
+import '../../widgets/profile_avatar_button.dart';
 import '../../widgets/result_card.dart';
 
 // ─── Data model ──────────────────────────────────────────────────────────────
@@ -1133,25 +1134,47 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
     final isSearching = _query.isNotEmpty;
     final entries = _shown;
 
-    return Column(
-      children: [
-        _buildSearchBar(isDark),
-        if (!isSearching) _buildCategoryChips(isDark),
-        Expanded(
-          child: entries.isEmpty
-              ? EmptyState(
-                  icon: Icons.search_off_rounded,
-                  title: 'No results for "$_query"',
-                  subtitle: 'Try a condition name, symptom, or abbreviation',
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
-                  itemCount: entries.length,
-                  itemBuilder: (_, i) =>
-                      _buildEntry(entries[i], isDark, isSearching),
-                ),
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Reference'),
+            Text(
+              'Norms & conditions',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.normal,
+                color: isDark
+                    ? const Color(0xFF8E8E93)
+                    : const Color(0xFF6E6E73),
+              ),
+            ),
+          ],
         ),
-      ],
+        actions: const [ProfileAvatarButton()],
+      ),
+      body: Column(
+        children: [
+          _buildSearchBar(isDark),
+          if (!isSearching) _buildCategoryChips(isDark),
+          Expanded(
+            child: entries.isEmpty
+                ? EmptyState(
+                    icon: Icons.search_off_rounded,
+                    title: 'No results for "$_query"',
+                    subtitle: 'Try a condition name, symptom, or abbreviation',
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+                    itemCount: entries.length,
+                    itemBuilder: (_, i) =>
+                        _buildEntry(entries[i], isDark, isSearching),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 

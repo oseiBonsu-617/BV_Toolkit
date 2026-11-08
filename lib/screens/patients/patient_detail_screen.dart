@@ -123,10 +123,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => Navigator.push(
+            onPressed: () => Navigator.of(
               context,
-              appRoute(PatientFormScreen(patient: patient)),
-            ),
+              rootNavigator: true,
+            ).push(appRoute(PatientFormScreen(patient: patient))),
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline, color: kBadText),

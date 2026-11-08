@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../services/patient_service.dart';
 import '../../models/patient.dart';
 import '../../theme.dart';
+import '../../widgets/profile_avatar_button.dart';
 import '../../widgets/result_card.dart';
 import 'patient_form_screen.dart';
 import 'patient_detail_screen.dart';
@@ -23,8 +24,10 @@ class _PatientListScreenState extends State<PatientListScreen> {
     super.dispose();
   }
 
-  void _openAdd() =>
-      Navigator.push(context, appRoute(const PatientFormScreen()));
+  void _openAdd() => Navigator.of(
+    context,
+    rootNavigator: true,
+  ).push(appRoute(const PatientFormScreen()));
 
   void _openDetail(Patient patient) => Navigator.push(
     context,
@@ -82,8 +85,9 @@ class _PatientListScreenState extends State<PatientListScreen> {
               }
             },
           ),
+          const ProfileAvatarButton(),
         ],
-        leading: const BackButton(),
+        automaticallyImplyLeading: false,
       ),
       backgroundColor: isDark
           ? const Color(0xFF0F0F0F)
