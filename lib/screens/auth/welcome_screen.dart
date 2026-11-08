@@ -45,6 +45,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       child: Scaffold(
         // The blue shows around the top panel's rounded bottom edge.
         backgroundColor: kPrimary,
+        // No text fields here; don't shrink while the keyboard from Sign In /
+        // Create account is still closing.
+        resizeToAvoidBottomInset: false,
         body: Column(
           children: [
             Expanded(child: _TopPanel(isDark: isDark)),

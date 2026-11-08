@@ -219,6 +219,14 @@ void main() {
       expect(find.byKey(const Key('welcome-create-account')).hitTestable(), findsOneWidget);
     });
 
+    testWidgets('does not overflow while the keyboard is still up', (tester) async {
+      _phoneView(tester, physical: const Size(750, 1334), dpr: 2.0);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 260 * 2.0);
+      addTearDown(tester.view.resetViewInsets);
+      await _pumpWelcome(tester);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('fits a 375x667 phone in dark mode without overflow', (tester) async {
       _phoneView(tester, physical: const Size(750, 1334), dpr: 2.0);
       await _pumpWelcome(tester, brightness: Brightness.dark);
