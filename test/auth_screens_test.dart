@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bv_toolkit/main.dart';
 import 'package:bv_toolkit/screens/auth/welcome_screen.dart';
+import 'package:bv_toolkit/screens/shell/main_shell.dart';
 import 'package:bv_toolkit/services/auth_service.dart';
 import 'package:bv_toolkit/services/patient_service.dart';
 import 'package:bv_toolkit/services/preferences_service.dart';
@@ -35,11 +38,39 @@ Future<void> _pumpWelcome(
   await tester.pumpAndSettle();
 }
 
-Future<void> _pumpApp(WidgetTester tester) async {
+/// Signs in by notifying listeners first (as Firebase's auth-state stream
+/// does) and only completes the sign-in call [tail] later.
+class _FakeAuth extends AuthService {
+  _FakeAuth({this.tail = const Duration(milliseconds: 120)});
+  final Duration tail;
+  bool _signedIn = false;
+
+  @override
+  bool get isLoggedIn => _signedIn;
+
+  Future<void> _signInNow() async {
+    _signedIn = true;
+    notifyListeners();
+    await Future<void>.delayed(tail);
+  }
+
+  @override
+  Future<void> signInWithGoogle({
+    String? displayName,
+    String? title,
+    String? clinic,
+  }) => _signInNow();
+
+  @override
+  Future<void> signIn({required String email, required String password}) =>
+      _signInNow();
+}
+
+Future<void> _pumpApp(WidgetTester tester, {AuthService? auth}) async {
   await tester.pumpWidget(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider<AuthService>.value(value: auth ?? AuthService()),
         ChangeNotifierProvider(create: (_) => PatientService()),
         ChangeNotifierProvider(create: (_) => SessionService()),
         ChangeNotifierProvider(create: (_) => PreferencesService()..load()),
@@ -82,6 +113,58 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(WelcomeScreen), findsOneWidget);
       expect(find.text('Welcome back'), findsNothing);
+    });
+  });
+
+  group('post-sign-in navigation', () {
+    Future<void> expectShellOnly(WidgetTester tester) async {
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(MainShell), findsOneWidget);
+      expect(find.byType(WelcomeScreen), findsNothing);
+      expect(find.text('Welcome back'), findsNothing);
+      expect(find.text("Let's get started!"), findsNothing);
+      final nav = tester.state<NavigatorState>(find.byType(Navigator).first);
+      expect(nav.canPop(), isFalse);
+    }
+
+    Future<void> tapGoogle(WidgetTester tester) async {
+      final google = find.text('Continue with Google');
+      await tester.ensureVisible(google);
+      await tester.tap(google);
+    }
+
+    testWidgets('Google from Create account lands on the shell', (tester) async {
+      _phoneView(tester);
+      SharedPreferences.setMockInitialValues({'onboarding_complete': true});
+      await _pumpApp(tester, auth: _FakeAuth());
+      await tester.tap(find.byKey(const Key('welcome-create-account')));
+      await tester.pumpAndSettle();
+      await tapGoogle(tester);
+      await expectShellOnly(tester);
+    });
+
+    testWidgets('Google from Sign In lands on the shell', (tester) async {
+      _phoneView(tester);
+      SharedPreferences.setMockInitialValues({'onboarding_complete': true});
+      await _pumpApp(tester, auth: _FakeAuth());
+      await tester.tap(find.byKey(const Key('welcome-sign-in')));
+      await tester.pumpAndSettle();
+      await tapGoogle(tester);
+      await expectShellOnly(tester);
+    });
+
+    testWidgets('email Sign In lands on the shell', (tester) async {
+      _phoneView(tester);
+      SharedPreferences.setMockInitialValues({'onboarding_complete': true});
+      await _pumpApp(tester, auth: _FakeAuth());
+      await tester.tap(find.byKey(const Key('welcome-sign-in')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign In'));
+      await expectShellOnly(tester);
     });
   });
 

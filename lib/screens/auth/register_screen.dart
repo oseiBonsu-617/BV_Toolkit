@@ -62,18 +62,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
         title: _title,
         clinic: _clinic.text.trim().isEmpty ? null : _clinic.text,
       );
-      if (result.needsEmailConfirmation) {
+      // Navigation after a successful sign-in is owned by _AuthGate, which
+      // pops the auth screens; popping here too could empty the navigator.
+      if (result.needsEmailConfirmation && mounted) {
         setState(() {
           _success =
               'Check ${result.email} to verify your account, then sign in.';
         });
-      } else if (mounted) {
-        Navigator.pop(context);
       }
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      if (mounted) setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'Something went wrong. Please try again.');
+      if (mounted) {
+        setState(() => _error = 'Something went wrong. Please try again.');
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -91,11 +93,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         title: _title,
         clinic: _clinic.text.trim().isEmpty ? null : _clinic.text,
       );
-      if (mounted) Navigator.pop(context);
+      // No pop here: _AuthGate clears the auth screens once signed in.
     } on AuthException catch (e) {
-      setState(() => _error = e.message);
+      if (mounted) setState(() => _error = e.message);
     } catch (_) {
-      setState(() => _error = 'Something went wrong. Please try again.');
+      if (mounted) {
+        setState(() => _error = 'Something went wrong. Please try again.');
+      }
     } finally {
       if (mounted) setState(() => _googleLoading = false);
     }
