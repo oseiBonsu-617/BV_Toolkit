@@ -7,7 +7,14 @@ import '../theme.dart';
 /// The signed-in user's initials circle. Opens Profile on the root navigator,
 /// which hides the bottom bar.
 class ProfileAvatarButton extends StatelessWidget {
-  const ProfileAvatarButton({super.key});
+  const ProfileAvatarButton({
+    super.key,
+    this.size = 34,
+    this.margin = const EdgeInsets.only(right: 12),
+  });
+
+  final double size;
+  final EdgeInsetsGeometry margin;
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +27,9 @@ class ProfileAvatarButton extends StatelessWidget {
           rootNavigator: true,
         ).push(appRoute(const ProfileScreen())),
         child: Container(
-          width: 34,
-          height: 34,
-          margin: const EdgeInsets.only(right: 12),
+          width: size,
+          height: size,
+          margin: margin,
           decoration: const BoxDecoration(
             color: kPrimary,
             shape: BoxShape.circle,
@@ -30,8 +37,8 @@ class ProfileAvatarButton extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             user?.initials ?? '?',
-            style: const TextStyle(
-              fontSize: 15,
+            style: TextStyle(
+              fontSize: size * 15 / 34,
               fontWeight: FontWeight.w600,
               color: Colors.white,
             ),

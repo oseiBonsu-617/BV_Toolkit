@@ -24,11 +24,14 @@ class _MainShellState extends State<MainShell> {
   /// Carries an entry title from [_openReference] to the Reference screen.
   final _referenceRequest = ValueNotifier<String?>(null);
 
+  /// Bumped to ask the Reference screen to clear its search and focus it.
+  final _referenceFocus = ValueNotifier<int>(0);
+
   late final _roots = <Widget>[
     const HomeScreen(),
     const PatientListScreen(),
     const ToolsHubScreen(),
-    ReferenceScreen(request: _referenceRequest),
+    ReferenceScreen(request: _referenceRequest, focusRequest: _referenceFocus),
   ];
 
   final _navigatorKeys = List.generate(
@@ -132,9 +135,19 @@ class _MainShellState extends State<MainShell> {
     if (popped) _referenceRequest.value = title;
   }
 
+  /// Shows the Reference tab popped to its root with an empty, focused
+  /// search box — unless a route on the way refuses to pop.
+  Future<void> _openReferenceSearch() async {
+    _openTab(ShellTab.reference);
+    final popped = await _popToRoot(ShellTab.reference);
+    if (!mounted) return;
+    if (popped) _referenceFocus.value++;
+  }
+
   @override
   void dispose() {
     _referenceRequest.dispose();
+    _referenceFocus.dispose();
     super.dispose();
   }
 
@@ -157,6 +170,7 @@ class _MainShellState extends State<MainShell> {
       openTool: _openTool,
       openPatient: _openPatient,
       openReference: _openReference,
+      openReferenceSearch: _openReferenceSearch,
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, _) {

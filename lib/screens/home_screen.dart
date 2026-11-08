@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../config/tools.dart';
@@ -95,91 +96,126 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final now = _now();
 
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        actions: const [ProfileAvatarButton()],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-        children: [
-          _greeting(context, now),
-          const SizedBox(height: 16),
-          _PearlCard(pearl: pearlFor(now)),
-          const SizedBox(height: 20),
-          _sectionHeader(
-            context,
-            'Your tools',
-            TextButton(
-              key: const Key('home-edit-shortcuts'),
-              onPressed: () => _edit(context),
-              child: const Text('Edit'),
-            ),
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        child: SafeArea(
+          bottom: false,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+            children: [
+              _header(context, now),
+              const SizedBox(height: 20),
+              _PearlCard(pearl: pearlFor(now)),
+              const SizedBox(height: 20),
+              _sectionHeader(
+                context,
+                'Your tools',
+                TextButton(
+                  key: const Key('home-edit-shortcuts'),
+                  onPressed: () => _edit(context),
+                  child: const Text('Edit'),
+                ),
+              ),
+              _shortcutGrid(context),
+              const SizedBox(height: 16),
+              _sectionHeader(
+                context,
+                'Recent patients',
+                TextButton(
+                  key: const Key('home-see-all'),
+                  onPressed: () =>
+                      ShellScope.of(context).openTabAtRoot(ShellTab.patients),
+                  child: const Text('See all'),
+                ),
+              ),
+              _recentPatients(context, isDark, borderColor),
+              const SizedBox(height: 20),
+              _ConditionCard(entry: conditionFor(now)),
+              _NormCard(entry: normFor(now)),
+            ],
           ),
-          _shortcutGrid(context),
-          const SizedBox(height: 16),
-          _sectionHeader(
-            context,
-            'Recent patients',
-            TextButton(
-              key: const Key('home-see-all'),
-              onPressed: () =>
-                  ShellScope.of(context).openTabAtRoot(ShellTab.patients),
-              child: const Text('See all'),
-            ),
-          ),
-          _recentPatients(context, isDark, borderColor),
-          const SizedBox(height: 20),
-          _ConditionCard(entry: conditionFor(now)),
-          _NormCard(entry: normFor(now)),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _greeting(BuildContext context, DateTime now) {
+  /// Avatar, one-line greeting and the search / add-patient icons, with the
+  /// date and this week's count on one small line under the greeting.
+  Widget _header(BuildContext context, DateTime now) {
     final name = firstNameOf(
       context.watch<AuthService?>()?.currentUser?.displayName ?? '',
     );
     final greeting = greetingFor(now);
     final muted = _muted(context);
-    final mutedStyle = TextStyle(fontSize: 15, color: muted);
+    final date = DateFormat('EEEE, d MMMM').format(now);
+    const avatar = 44.0;
+    const gap = 12.0;
     return Padding(
-      key: const Key('home-greeting'),
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            name.isEmpty ? greeting : '$greeting, $name',
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
+          Row(
+            children: [
+              const ProfileAvatarButton(size: avatar, margin: EdgeInsets.zero),
+              const SizedBox(width: gap),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    name.isEmpty ? greeting : '$greeting, $name',
+                    key: const Key('home-greeting'),
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                key: const Key('home-search'),
+                tooltip: 'Search Reference',
+                icon: Icon(Icons.search, size: 24, color: muted),
+                onPressed: () => ShellScope.of(context).openReferenceSearch(),
+              ),
+              IconButton(
+                key: const Key('home-add-patient'),
+                tooltip: 'Add patient',
+                icon: Icon(
+                  Icons.person_add_alt_1_outlined,
+                  size: 24,
+                  color: muted,
+                ),
+                onPressed: () => Navigator.of(
+                  context,
+                  rootNavigator: true,
+                ).push(appRoute(const PatientFormScreen())),
+              ),
+            ],
           ),
-          const SizedBox(height: 2),
-          Text(DateFormat('EEEE, d MMMM').format(now), style: mutedStyle),
-          const SizedBox(height: 2),
-          FutureBuilder<WeekSummary>(
-            future: _summary,
-            builder: (context, snap) {
-              final s =
-                  snap.connectionState == ConnectionState.done && snap.hasData
-                  ? snap.data!
-                  : null;
-              // Empty while loading (or if the count failed); an empty Text
-              // still takes a line, so nothing jumps when it arrives.
-              return Text(
-                s == null
-                    ? ''
-                    : weekSummaryText(
-                        sessions: s.sessions,
-                        patients: s.patients,
-                      ),
-                key: const Key('home-week-summary'),
-                style: mutedStyle,
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.only(left: avatar + gap, top: 2),
+            child: FutureBuilder<WeekSummary>(
+              future: _summary,
+              builder: (context, snap) {
+                final s =
+                    snap.connectionState == ConnectionState.done && snap.hasData
+                    ? snap.data!
+                    : null;
+                // Just the date while loading (or if the count failed).
+                return Text(
+                  s == null
+                      ? date
+                      : '$date · ${weekSummaryText(sessions: s.sessions, patients: s.patients)}',
+                  key: const Key('home-week-summary'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 15, color: muted),
+                );
+              },
+            ),
           ),
         ],
       ),

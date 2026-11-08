@@ -189,7 +189,7 @@ void main() {
     test('no sessions invites the user', () {
       expect(
         weekSummaryText(sessions: 0, patients: 0),
-        'No sessions yet this week — ready when you are.',
+        'No sessions yet this week',
       );
     });
 

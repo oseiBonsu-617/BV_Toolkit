@@ -338,6 +338,38 @@ void main() {
     expect(find.text('guarded screen'), findsOneWidget);
   });
 
+  group('openReferenceSearch', () {
+    testWidgets('shows Reference with an empty, focused search box', (
+      tester,
+    ) async {
+      await pumpShell(tester);
+      shellScope(tester).openReferenceSearch();
+      await tester.pumpAndSettle();
+      expect(selectedTab(tester), 3);
+      final field = find.descendant(
+        of: find.byType(ReferenceScreen),
+        matching: find.byType(TextField),
+      );
+      expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+      expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
+    });
+
+    testWidgets('clears an earlier search and opened entry', (tester) async {
+      await pumpShell(tester);
+      shellScope(tester).openReference('NPC Norms');
+      await tester.pumpAndSettle();
+      await tapTab(tester, 'Home');
+      shellScope(tester).openReferenceSearch();
+      await tester.pumpAndSettle();
+      final field = find.descendant(
+        of: find.byType(ReferenceScreen),
+        matching: find.byType(TextField),
+      );
+      expect(tester.widget<TextField>(field).controller!.text, isEmpty);
+      expect(tester.widget<TextField>(field).focusNode!.hasFocus, isTrue);
+    });
+  });
+
   group('openReference', () {
     const npcBullet = 'Normal break: ≤5 cm from spectacle plane';
 

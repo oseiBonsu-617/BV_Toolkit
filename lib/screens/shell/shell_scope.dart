@@ -15,6 +15,7 @@ class ShellScope extends InheritedWidget {
     required this.openTool,
     required this.openPatient,
     required this.openReference,
+    required this.openReferenceSearch,
     required super.child,
   });
 
@@ -28,6 +29,9 @@ class ShellScope extends InheritedWidget {
   /// Shows the Reference tab with the entry titled [entryTitle] found and
   /// opened.
   final void Function(String entryTitle) openReference;
+
+  /// Shows the Reference tab with an empty search box focused.
+  final VoidCallback openReferenceSearch;
 
   static ShellScope of(BuildContext c) {
     final scope = c.dependOnInheritedWidgetOfExactType<ShellScope>();

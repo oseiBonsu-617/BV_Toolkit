@@ -7,11 +7,14 @@ import '../../widgets/result_card.dart';
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 class ReferenceScreen extends StatefulWidget {
-  const ReferenceScreen({super.key, this.request});
+  const ReferenceScreen({super.key, this.request, this.focusRequest});
 
   /// Set to an entry title to show that entry, found and opened. The screen
   /// resets it to null once handled, so the same title can be asked again.
   final ValueNotifier<String?>? request;
+
+  /// Bumped to clear the search and put the cursor in the search box.
+  final ValueNotifier<int>? focusRequest;
 
   @override
   State<ReferenceScreen> createState() => _ReferenceScreenState();
@@ -35,6 +38,7 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
   void initState() {
     super.initState();
     widget.request?.addListener(_onRequest);
+    widget.focusRequest?.addListener(_onFocusRequest);
     _onRequest();
   }
 
@@ -46,6 +50,22 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
       widget.request?.addListener(_onRequest);
       _onRequest();
     }
+    if (old.focusRequest != widget.focusRequest) {
+      old.focusRequest?.removeListener(_onFocusRequest);
+      widget.focusRequest?.addListener(_onFocusRequest);
+    }
+  }
+
+  void _onFocusRequest() {
+    _searchCtrl.clear();
+    setState(() {
+      _query = '';
+      _openTitle = null;
+    });
+    // The tab may only just have become visible: focus after its frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
   }
 
   void _onRequest() {
@@ -64,6 +84,7 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
   @override
   void dispose() {
     widget.request?.removeListener(_onRequest);
+    widget.focusRequest?.removeListener(_onFocusRequest);
     _searchCtrl.dispose();
     _focusNode.dispose();
     super.dispose();

@@ -8,6 +8,7 @@ import 'package:bv_toolkit/data/home_feed.dart';
 import 'package:bv_toolkit/models/app_user.dart';
 import 'package:bv_toolkit/screens/home_screen.dart';
 import 'package:bv_toolkit/screens/shell/shell_scope.dart';
+import 'package:bv_toolkit/widgets/profile_avatar_button.dart';
 import 'package:bv_toolkit/services/auth_service.dart';
 import 'package:bv_toolkit/services/patient_service.dart';
 import 'package:bv_toolkit/services/preferences_service.dart';
@@ -45,6 +46,7 @@ class _CountingSessionService extends SessionService {
 
 void main() {
   final references = <String>[];
+  var searchOpens = 0;
   final sinces = <DateTime>[];
   // Sunday 8 November 2026.
   final sunday9am = DateTime(2026, 11, 8, 9);
@@ -62,6 +64,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     references.clear();
+    searchOpens = 0;
     sinces.clear();
     SharedPreferences.setMockInitialValues({});
     final prefs = PreferencesService();
@@ -86,6 +89,7 @@ void main() {
             openTool: (_) {},
             openPatient: (_) {},
             openReference: references.add,
+            openReferenceSearch: () => searchOpens++,
             child: HomeScreen(
               now: clock ?? () => at,
               weekSummary: sessions != null
@@ -109,6 +113,9 @@ void main() {
   String summaryText(WidgetTester tester) =>
       tester.widget<Text>(find.byKey(const Key('home-week-summary'))).data!;
 
+  String greetingText(WidgetTester tester) =>
+      tester.widget<Text>(find.byKey(const Key('home-greeting'))).data!;
+
   Future<void> tapKey(WidgetTester tester, String key) async {
     await tester.ensureVisible(find.byKey(Key(key)));
     await tester.pumpAndSettle();
@@ -126,24 +133,18 @@ void main() {
         tester,
       ) async {
         await pumpHome(tester, now: DateTime(2026, 11, 8, hour));
-        expect(
-          inKey('home-greeting', find.text('$greeting, Osei')),
-          findsOneWidget,
-        );
+        expect(greetingText(tester), '$greeting, Osei');
       });
     }
 
     testWidgets('no name means no comma', (tester) async {
       await pumpHome(tester, displayName: '');
-      expect(inKey('home-greeting', find.text('Good morning')), findsOneWidget);
+      expect(greetingText(tester), 'Good morning');
     });
 
     testWidgets('shows the date', (tester) async {
       await pumpHome(tester);
-      expect(
-        inKey('home-greeting', find.text('Sunday, 8 November')),
-        findsOneWidget,
-      );
+      expect(summaryText(tester), startsWith('Sunday, 8 November'));
     });
 
     testWidgets('the app name is no longer the title', (tester) async {
@@ -153,23 +154,121 @@ void main() {
     });
   });
 
+  group('header', () {
+    testWidgets('avatar, one-line greeting, search and add-patient', (
+      tester,
+    ) async {
+      await pumpHome(tester, now: DateTime(2026, 11, 8, 9));
+      expect(find.byType(ProfileAvatarButton), findsOneWidget);
+      expect(find.byType(AppBar), findsNothing);
+      expect(greetingText(tester), 'Good morning, Osei');
+      expect(find.byKey(const Key('home-search')), findsOneWidget);
+      expect(find.byKey(const Key('home-add-patient')), findsOneWidget);
+      expect(find.byTooltip('Search Reference'), findsOneWidget);
+      expect(find.byTooltip('Add patient'), findsOneWidget);
+    });
+
+    testWidgets('search opens Reference search once', (tester) async {
+      await pumpHome(tester);
+      await tester.tap(find.byKey(const Key('home-search')));
+      await tester.pumpAndSettle();
+      expect(searchOpens, 1);
+    });
+
+    testWidgets('add patient pushes the form on the root navigator', (
+      tester,
+    ) async {
+      await pumpHome(tester);
+      await tester.tap(find.byKey(const Key('home-add-patient')));
+      await tester.pumpAndSettle();
+      expect(find.text('First name *'), findsOneWidget);
+    });
+
+    testWidgets('a combined date and summary line', (tester) async {
+      await pumpHome(tester, summary: (sessions: 3, patients: 2));
+      expect(
+        summaryText(tester),
+        'Sunday, 8 November · 3 sessions this week · 2 patients',
+      );
+    });
+
+    for (final scale in [1.0, 1.3]) {
+      testWidgets('a long name stays on one line at text scale $scale', (
+        tester,
+      ) async {
+        tester.view.physicalSize = const Size(375, 667);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+        SharedPreferences.setMockInitialValues({});
+        final prefs = PreferencesService();
+        await prefs.load();
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<AuthService>(
+                create: (_) => _SignedInAuth('Bartholomew-Alexander Smith'),
+              ),
+              ChangeNotifierProvider(create: (_) => PatientService()),
+              ChangeNotifierProvider.value(value: prefs),
+            ],
+            child: MaterialApp(
+              theme: buildTheme(Brightness.light),
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: TextScaler.linear(scale)),
+                child: child!,
+              ),
+              home: ShellScope(
+                openTab: (_) {},
+                openTabAtRoot: (_) {},
+                openTool: (_) {},
+                openPatient: (_) {},
+                openReference: (_) {},
+                openReferenceSearch: () {},
+                child: HomeScreen(
+                  now: () => DateTime(2026, 11, 8, 20),
+                  weekSummary: (_) async => (sessions: 3, patients: 2),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(greetingText(tester), 'Good evening, Bartholomew-Alexander');
+        expect(tester.takeException(), isNull);
+        final height = tester
+            .getSize(find.byKey(const Key('home-greeting')))
+            .height;
+        // One line of 24 pt text is about 29 pt; two would be about 58.
+        expect(height, lessThan(24 * 1.5 * scale + 1));
+      });
+    }
+  });
+
   group('week summary', () {
     testWidgets('no sessions', (tester) async {
       await pumpHome(tester);
       expect(
         summaryText(tester),
-        'No sessions yet this week — ready when you are.',
+        'Sunday, 8 November · No sessions yet this week',
       );
     });
 
     testWidgets('one session, one patient', (tester) async {
       await pumpHome(tester, summary: (sessions: 1, patients: 1));
-      expect(summaryText(tester), '1 session this week · 1 patient');
+      expect(
+        summaryText(tester),
+        'Sunday, 8 November · 1 session this week · 1 patient',
+      );
     });
 
     testWidgets('several sessions and patients', (tester) async {
       await pumpHome(tester, summary: (sessions: 3, patients: 2));
-      expect(summaryText(tester), '3 sessions this week · 2 patients');
+      expect(
+        summaryText(tester),
+        'Sunday, 8 November · 3 sessions this week · 2 patients',
+      );
     });
 
     testWidgets('counts from Monday 00:00 of this week', (tester) async {
@@ -177,31 +276,34 @@ void main() {
       expect(sinces, [DateTime(2026, 11, 2)]);
     });
 
-    testWidgets('shows nothing while loading, keeping its height', (
-      tester,
-    ) async {
+    testWidgets('shows just the date while loading', (tester) async {
       final pending = Completer<Summary>();
       await pumpHome(tester, weekSummary: (_) => pending.future);
-      expect(summaryText(tester), '');
+      expect(summaryText(tester), 'Sunday, 8 November');
       final loadingHeight = tester
           .getSize(find.byKey(const Key('home-week-summary')))
           .height;
       expect(loadingHeight, greaterThan(0));
       pending.complete((sessions: 2, patients: 2));
       await tester.pumpAndSettle();
-      expect(summaryText(tester), '2 sessions this week · 2 patients');
       expect(
-        tester.getSize(find.byKey(const Key('home-week-summary'))).height,
-        loadingHeight,
+        summaryText(tester),
+        'Sunday, 8 November · 2 sessions this week · 2 patients',
       );
+      // The test font is wide, so the full line may wrap; two lines at most.
+      final loadedHeight = tester
+          .getSize(find.byKey(const Key('home-week-summary')))
+          .height;
+      expect(loadedHeight, greaterThanOrEqualTo(loadingHeight));
+      expect(loadedHeight, lessThanOrEqualTo(2 * loadingHeight));
     });
 
-    testWidgets('a failed count shows nothing', (tester) async {
+    testWidgets('a failed count shows just the date', (tester) async {
       await pumpHome(
         tester,
         weekSummary: (_) => Future<Summary>.error(StateError('no db')),
       );
-      expect(summaryText(tester), '');
+      expect(summaryText(tester), 'Sunday, 8 November');
       expect(tester.takeException(), isNull);
     });
 
@@ -213,13 +315,16 @@ void main() {
       expect(sessions.calls, 1);
       expect(
         summaryText(tester),
-        'No sessions yet this week — ready when you are.',
+        'Sunday, 8 November · No sessions yet this week',
       );
       sessions.next = (sessions: 1, patients: 1);
       sessions.changed();
       await tester.pumpAndSettle();
       expect(sessions.calls, 2);
-      expect(summaryText(tester), '1 session this week · 1 patient');
+      expect(
+        summaryText(tester),
+        'Sunday, 8 November · 1 session this week · 1 patient',
+      );
     });
   });
 
@@ -309,16 +414,10 @@ void main() {
     testWidgets('updates the greeting for the new time of day', (tester) async {
       var t = DateTime(2026, 11, 8, 9);
       await pumpHome(tester, clock: () => t);
-      expect(
-        inKey('home-greeting', find.text('Good morning, Osei')),
-        findsOneWidget,
-      );
+      expect(greetingText(tester), 'Good morning, Osei');
       t = DateTime(2026, 11, 8, 14);
       await resume(tester);
-      expect(
-        inKey('home-greeting', find.text('Good afternoon, Osei')),
-        findsOneWidget,
-      );
+      expect(greetingText(tester), 'Good afternoon, Osei');
     });
 
     testWidgets('a new day brings a new pearl and a new week a new count', (
@@ -335,10 +434,7 @@ void main() {
         inKey('home-condition', find.text(conditionFor(t).title)),
         findsOneWidget,
       );
-      expect(
-        inKey('home-greeting', find.text('Monday, 9 November')),
-        findsOneWidget,
-      );
+      expect(summaryText(tester), startsWith('Monday, 9 November'));
     });
   });
 }

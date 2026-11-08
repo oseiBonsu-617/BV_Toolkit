@@ -70,7 +70,7 @@ String firstNameOf(String displayName) {
 
 /// The line under the greeting about this week's sessions.
 String weekSummaryText({required int sessions, required int patients}) {
-  if (sessions == 0) return 'No sessions yet this week — ready when you are.';
+  if (sessions == 0) return 'No sessions yet this week';
   final s = sessions == 1 ? '' : 's';
   final p = patients == 1 ? '' : 's';
   return '$sessions session$s this week · $patients patient$p';

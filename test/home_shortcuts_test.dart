@@ -46,6 +46,7 @@ void main() {
             openTool: tools.add,
             openPatient: patients.add,
             openReference: references.add,
+            openReferenceSearch: () {},
             child: const HomeScreen(),
           ),
         ),
@@ -57,9 +58,12 @@ void main() {
   Finder tile(String id) => find.byKey(Key('home-shortcut-$id'));
 
   testWidgets('shows saved picks', (tester) async {
-    await pumpHome(tester, stored: {
-      'home_shortcuts': ['diagnose', 'reference', 'analysis'],
-    });
+    await pumpHome(
+      tester,
+      stored: {
+        'home_shortcuts': ['diagnose', 'reference', 'analysis'],
+      },
+    );
     expect(tile('diagnose'), findsOneWidget);
     expect(tile('reference'), findsOneWidget);
     expect(tile('analysis'), findsOneWidget);
@@ -80,9 +84,12 @@ void main() {
   });
 
   testWidgets('tapping Reference tile opens tab', (tester) async {
-    await pumpHome(tester, stored: {
-      'home_shortcuts': ['reference', 'phoria', 'vergence'],
-    });
+    await pumpHome(
+      tester,
+      stored: {
+        'home_shortcuts': ['reference', 'phoria', 'vergence'],
+      },
+    );
     await tester.tap(tile('reference'));
     expect(tabs, [ShellTab.reference]);
   });

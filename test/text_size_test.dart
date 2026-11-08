@@ -64,6 +64,7 @@ Widget fixedHome(DateTime now, {int sessions = 3, int patients = 2}) =>
       openTool: (_) {},
       openPatient: (_) {},
       openReference: (_) {},
+      openReferenceSearch: () {},
       child: HomeScreen(
         now: () => now,
         weekSummary: (_) async => (sessions: sessions, patients: patients),
