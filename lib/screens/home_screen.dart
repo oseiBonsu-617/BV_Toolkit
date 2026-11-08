@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../config/tools.dart';
+import '../services/patient_service.dart';
+import '../services/preferences_service.dart';
 import '../theme.dart';
+import '../widgets/home_shortcuts_picker.dart';
 import '../widgets/profile_avatar_button.dart';
 import '../widgets/result_card.dart';
+import 'patients/patient_form_screen.dart';
 import 'shell/shell_scope.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -38,6 +44,29 @@ class HomeScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          _sectionHeader(
+            context,
+            'Your tools',
+            TextButton(
+              key: const Key('home-edit-shortcuts'),
+              onPressed: () => _edit(context),
+              child: const Text('Edit'),
+            ),
+          ),
+          _shortcutGrid(context),
+          const SizedBox(height: 16),
+          _sectionHeader(
+            context,
+            'Recent patients',
+            TextButton(
+              key: const Key('home-see-all'),
+              onPressed: () =>
+                  ShellScope.of(context).openTab(ShellTab.patients),
+              child: const Text('See all'),
+            ),
+          ),
+          _recentPatients(context, isDark, borderColor),
+          const SizedBox(height: 16),
           AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,54 +119,101 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            childAspectRatio: 1.5,
-            children: [
-              _tile(
-                context,
-                Icons.remove_red_eye_outlined,
-                'Phoria & ratios',
-                'AC/A and CA/C',
-                'phoria',
-              ),
-              _tile(
-                context,
-                Icons.open_with,
-                'Vergence & NPC',
-                'Ranges vs. norms',
-                'vergence',
-              ),
-              _tile(
-                context,
-                Icons.zoom_in_outlined,
-                'Accommodation',
-                'Norms & ranges',
-                'accommodation',
-              ),
-              _tile(
-                context,
-                Icons.balance_outlined,
-                'Analysis',
-                "Sheard's & Percival's",
-                'analysis',
-              ),
-              _tile(
-                context,
-                Icons.medical_services_outlined,
-                'Diagnose',
-                'Ranked BV diagnosis',
-                'diagnose',
-                highlighted: true,
-                badge: 'New',
-              ),
-              _patientsTile(context),
-            ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _edit(BuildContext context) async {
+    final prefs = context.read<PreferencesService>();
+    final r = await showHomeShortcutsPicker(
+      context,
+      initial: prefs.homeShortcuts,
+    );
+    if (r != null) await prefs.setHomeShortcuts(r);
+  }
+
+  Widget _sectionHeader(BuildContext context, String title, Widget action) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
           ),
+          action,
+        ],
+      ),
+    );
+  }
+
+  Widget _shortcutGrid(BuildContext context) {
+    final ids = context.watch<PreferencesService>().homeShortcuts;
+    final defs = [
+      for (final id in ids)
+        for (final s in kShortcuts)
+          if (s.id == id) s,
+    ];
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      childAspectRatio: 1.5,
+      children: [for (final s in defs) _tile(context, s)],
+    );
+  }
+
+  Widget _recentPatients(BuildContext context, bool isDark, Color borderColor) {
+    final recent = context.watch<PatientService>().recent;
+    if (recent.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: FilledButton(
+          key: const Key('home-add-first-patient'),
+          onPressed: () => Navigator.of(
+            context,
+            rootNavigator: true,
+          ).push(appRoute(const PatientFormScreen())),
+          child: const Text('Add your first patient'),
+        ),
+      );
+    }
+    final muted = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73);
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        border: Border.all(color: borderColor, width: 0.5),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        children: [
+          for (final p in recent)
+            ListTile(
+              key: Key('home-patient-${p.id}'),
+              leading: CircleAvatar(
+                radius: 16,
+                backgroundColor: kPrimary.withValues(alpha: 0.12),
+                child: Text(
+                  p.initials,
+                  style: const TextStyle(fontSize: 12, color: kPrimary),
+                ),
+              ),
+              title: Text(p.fullName, style: const TextStyle(fontSize: 14)),
+              subtitle: Text(
+                [
+                  if (p.age != null) '${p.age} yrs',
+                  if (p.mrn != null && p.mrn!.isNotEmpty) 'MRN ${p.mrn}',
+                ].join(' · '),
+                style: TextStyle(fontSize: 11, color: muted),
+              ),
+              trailing: const Icon(Icons.chevron_right, size: 18),
+              onTap: () => ShellScope.of(context).openPatient(p.id),
+            ),
         ],
       ),
     );
@@ -204,10 +280,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _patientsTile(BuildContext context) {
+  Widget _tile(BuildContext context, ShortcutDef s) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
-      onTap: () => ShellScope.of(context).openTab(ShellTab.patients),
+      key: Key('home-shortcut-${s.id}'),
+      onTap: () => ShellScope.of(context).openShortcut(s.id),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -220,86 +297,13 @@ class HomeScreen extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.people_outline, size: 20, color: kPrimary),
+            Icon(s.icon, size: 20, color: kPrimary),
             const SizedBox(height: 6),
-            const Text(
-              'Patients',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 2),
             Text(
-              'Records & profiles',
-              style: TextStyle(
-                fontSize: 11,
-                height: 1.35,
-                color: isDark
-                    ? const Color(0xFF8E8E93)
-                    : const Color(0xFF6E6E73),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _tile(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String desc,
-    String toolId, {
-    bool highlighted = false,
-    String? badge,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: () => ShellScope.of(context).openShortcut(toolId),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-          border: Border.all(
-            color: highlighted
-                ? kPrimary
-                : (isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA)),
-            width: highlighted ? 1.5 : 0.5,
-          ),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 20, color: kPrimary),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                if (badge != null) ...[
-                  const SizedBox(width: 4),
-                  Pill.normal(badge),
-                ],
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              desc,
-              style: TextStyle(
-                fontSize: 11,
-                height: 1.35,
-                color: isDark
-                    ? const Color(0xFF8E8E93)
-                    : const Color(0xFF6E6E73),
-              ),
+              s.name,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ],
         ),

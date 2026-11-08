@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/preferences_service.dart';
+import '../widgets/home_shortcuts_picker.dart';
 import '../models/app_user.dart';
 import '../theme.dart';
 
@@ -79,6 +81,20 @@ class ProfileScreen extends StatelessWidget {
         icon: Icons.edit_outlined,
         label: 'Edit profile',
         onTap: () => _showEditProfile(context),
+      ),
+      _divider(isDark),
+      _actionRow(
+        context,
+        icon: Icons.dashboard_customize_outlined,
+        label: 'Home shortcuts',
+        onTap: () async {
+          final prefs = context.read<PreferencesService>();
+          final r = await showHomeShortcutsPicker(
+            context,
+            initial: prefs.homeShortcuts,
+          );
+          if (r != null) await prefs.setHomeShortcuts(r);
+        },
       ),
       _divider(isDark),
       _actionRow(
