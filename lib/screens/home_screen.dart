@@ -30,7 +30,7 @@ class HomeScreen extends StatelessWidget {
             Text(
               'Clinical suite',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: FontWeight.normal,
                 color: isDark
                     ? const Color(0xFF8E8E93)
@@ -163,7 +163,7 @@ class HomeScreen extends StatelessWidget {
       crossAxisCount: 2,
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
-      childAspectRatio: 1.5,
+      childAspectRatio: 1.2,
       children: [for (final s in defs) _tile(context, s)],
     );
   }
@@ -200,7 +200,7 @@ class HomeScreen extends StatelessWidget {
                 backgroundColor: kPrimary.withValues(alpha: 0.12),
                 child: Text(
                   p.initials,
-                  style: TextStyle(fontSize: 12, color: primaryOf(context)),
+                  style: TextStyle(fontSize: 14, color: primaryOf(context)),
                 ),
               ),
               title: Text(p.fullName, style: const TextStyle(fontSize: 14)),
@@ -209,7 +209,7 @@ class HomeScreen extends StatelessWidget {
                   if (p.age != null) '${p.age} yrs',
                   if (p.mrn != null && p.mrn!.isNotEmpty) 'MRN ${p.mrn}',
                 ].join(' · '),
-                style: TextStyle(fontSize: 11, color: muted),
+                style: TextStyle(fontSize: 13, color: muted),
               ),
               trailing: const Icon(Icons.chevron_right, size: 18),
               onTap: () => ShellScope.of(context).openPatient(p.id),
@@ -228,7 +228,7 @@ class HomeScreen extends StatelessWidget {
               child: Text(
                 c,
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 12,
                   textBaseline: TextBaseline.alphabetic,
                   letterSpacing: 0.4,
                   color: Theme.of(context).brightness == Brightness.dark
@@ -249,7 +249,7 @@ class HomeScreen extends StatelessWidget {
     bool colSpan2 = false,
   }) {
     final style = TextStyle(
-      fontSize: 11,
+      fontSize: 13,
       fontWeight: highlight ? FontWeight.w500 : FontWeight.normal,
       color: highlight ? primaryOf(context) : null,
     );
@@ -258,7 +258,7 @@ class HomeScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
-            child: Text(cells[0], style: const TextStyle(fontSize: 11)),
+            child: Text(cells[0], style: const TextStyle(fontSize: 13)),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
@@ -303,7 +303,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               s.name,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ],
         ),

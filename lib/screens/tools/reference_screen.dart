@@ -1144,7 +1144,7 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
             Text(
               'Norms & conditions',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: FontWeight.normal,
                 color: isDark
                     ? const Color(0xFF8E8E93)
@@ -1255,7 +1255,7 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
               child: Text(
                 cat,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                   color: selected
                       ? Colors.white
@@ -1304,7 +1304,7 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
                 Text(
                   e.title,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1324,7 +1324,7 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
                   Text(
                     e.body,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       height: 1.6,
                       color: isDark
                           ? const Color(0xFFEBEBEB)
@@ -1348,7 +1348,7 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
                         e.code!,
                         style: const TextStyle(
                           fontFamily: 'monospace',
-                          fontSize: 11.5,
+                          fontSize: 13.5,
                           color: kOkText,
                         ),
                       ),
@@ -1376,7 +1376,7 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
                               child: Text(
                                 b,
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 14,
                                   height: 1.5,
                                   color: isDark
                                       ? const Color(0xFFD1D1D6)
@@ -1416,7 +1416,7 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
                             child: Text(
                               e.management!,
                               style: TextStyle(
-                                fontSize: 11.5,
+                                fontSize: 13.5,
                                 height: 1.55,
                                 color: isDark
                                     ? const Color(0xFFD1D1D6)

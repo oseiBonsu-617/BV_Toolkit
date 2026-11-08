@@ -212,7 +212,7 @@ class _WelcomePage extends StatelessWidget {
               const Text(
                 'SWIPE TO DISCOVER MORE',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFFAEAEB2),
                 ),

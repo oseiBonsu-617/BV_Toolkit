@@ -218,7 +218,7 @@ class GraphicalAnalysisBodyState extends State<GraphicalAnalysisBody> {
                 Text(
                   'Drag across the plot to read vergence / accommodation. Tap a legend chip to toggle a layer.',
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 12.5,
                     height: 1.4,
                     color: Theme.of(context).brightness == Brightness.dark
                         ? const Color(0xFF8E8E93)
@@ -243,7 +243,7 @@ class GraphicalAnalysisBodyState extends State<GraphicalAnalysisBody> {
             child: Text(
               'Interpretation is a clinical aid derived from the entered values — always correlate with symptoms and the full examination.',
               style: TextStyle(
-                fontSize: 10.5,
+                fontSize: 12.5,
                 height: 1.45,
                 fontStyle: FontStyle.italic,
                 color: Theme.of(context).brightness == Brightness.dark
@@ -488,7 +488,7 @@ class GraphicalAnalysisBodyState extends State<GraphicalAnalysisBody> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 10,
+                            fontSize: 12,
                             color: Color(0xFF8E8E93),
                           ),
                         ),

@@ -249,11 +249,11 @@ class _VergenceScreenState extends State<VergenceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(r.label, style: TextStyle(
-            fontSize: 11,
+            fontSize: 13,
             color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
           )),
           Row(children: [
-            Text(r.value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+            Text(r.value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
             if (r.badge.isNotEmpty) ...[const SizedBox(width: 5), badge],
           ]),
         ],

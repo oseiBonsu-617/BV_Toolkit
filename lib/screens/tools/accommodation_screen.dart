@@ -419,7 +419,7 @@ class _RowsPanel extends StatelessWidget {
                   child: Text(
                     r.label,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       color: isDark
                           ? const Color(0xFF8E8E93)
                           : const Color(0xFF6E6E73),
@@ -431,7 +431,7 @@ class _RowsPanel extends StatelessWidget {
                     Text(
                       r.value,
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

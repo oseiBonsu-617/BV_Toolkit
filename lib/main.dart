@@ -89,7 +89,7 @@ class ConfigurationErrorApp extends StatelessWidget {
                   SizedBox(height: 8),
                   Text(
                     'Run FlutterFire setup or pass Firebase dart defines before launching.',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF6E6E73)),
+                    style: TextStyle(fontSize: 15, color: Color(0xFF6E6E73)),
                     textAlign: TextAlign.center,
                   ),
                 ],

@@ -107,7 +107,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         child: Icon(icon, size: 20, color: primaryOf(context)),
       ),
       title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 14)),
       trailing: const Icon(Icons.chevron_right, size: 18),
     );
   }
@@ -183,7 +183,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       Padding(
         padding: const EdgeInsets.only(left: 4, bottom: 6),
         child: Text('SESSIONS', style: TextStyle(
-          fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.6,
+          fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 0.6,
           color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
         )),
       ),
@@ -200,7 +200,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               decoration: _cardDecor(isDark),
               child: Text(
                 'No sessions recorded yet. Tap + New session to start.',
-                style: TextStyle(fontSize: 13,
+                style: TextStyle(fontSize: 15,
                     color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73)),
               ),
             );
@@ -317,7 +317,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                 s.visitNote?.isNotEmpty == true
                     ? s.visitNote!
                     : '$sectionCount test section${sectionCount == 1 ? '' : 's'} recorded',
-                style: TextStyle(fontSize: 12,
+                style: TextStyle(fontSize: 14,
                     color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -371,7 +371,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       borderRadius: BorderRadius.circular(999),
     ),
     child: Text(text,
-        style: TextStyle(fontSize: 12, color: primaryOf(context), fontWeight: FontWeight.w500)),
+        style: TextStyle(fontSize: 14, color: primaryOf(context), fontWeight: FontWeight.w500)),
   );
 
   // ─── Info sections ─────────────────────────────────────────────────────────
@@ -428,7 +428,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       Padding(
         padding: const EdgeInsets.only(left: 4, bottom: 6),
         child: Text(heading.toUpperCase(), style: TextStyle(
-          fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.6,
+          fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 0.6,
           color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
         )),
       ),
@@ -445,7 +445,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       child: multiLine
           ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(label, style: TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
               )),
               const SizedBox(height: 4),
@@ -455,11 +455,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               SizedBox(
                 width: 110,
                 child: Text(label, style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 15,
                   color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
                 )),
               ),
-              Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
+              Expanded(child: Text(value, style: const TextStyle(fontSize: 15))),
             ]),
     );
   }

@@ -213,7 +213,7 @@ class AuthOrDivider extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Text(
             'or',
-            style: TextStyle(fontSize: 13, color: authSecondaryTextOf(context)),
+            style: TextStyle(fontSize: 15, color: authSecondaryTextOf(context)),
           ),
         ),
         Expanded(child: Divider(height: 1, color: color)),
@@ -276,7 +276,7 @@ class AuthSectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 13,
+          fontSize: 15,
           fontWeight: FontWeight.w500,
           color: authSecondaryTextOf(context),
         ),
@@ -348,7 +348,7 @@ class _MessageBox extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(fontSize: 13, color: foreground),
+              style: TextStyle(fontSize: 15, color: foreground),
             ),
           ),
         ],

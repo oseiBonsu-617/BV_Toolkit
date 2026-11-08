@@ -173,7 +173,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                       Text(
                         symptom.label,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           color: selected ? Colors.white : null,
                           fontWeight: selected
                               ? FontWeight.w500
@@ -250,7 +250,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             color: selected ? Colors.white : null,
             fontWeight: selected ? FontWeight.w500 : FontWeight.normal,
           ),
@@ -279,7 +279,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                     Text(
                       'Distance VA',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 13,
                         color: isDark
                             ? const Color(0xFF8E8E93)
                             : const Color(0xFF6E6E73),
@@ -290,9 +290,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                       controller: _vaDistCtrl,
                       decoration: const InputDecoration(
                         hintText: '6/6',
-                        hintStyle: TextStyle(fontSize: 13),
+                        hintStyle: TextStyle(fontSize: 15),
                       ),
-                      style: const TextStyle(fontSize: 13),
+                      style: const TextStyle(fontSize: 15),
                     ),
                   ],
                 ),
@@ -305,7 +305,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                     Text(
                       'Near VA',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 13,
                         color: isDark
                             ? const Color(0xFF8E8E93)
                             : const Color(0xFF6E6E73),
@@ -316,9 +316,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                       controller: _vaNearCtrl,
                       decoration: const InputDecoration(
                         hintText: 'N5',
-                        hintStyle: TextStyle(fontSize: 13),
+                        hintStyle: TextStyle(fontSize: 15),
                       ),
-                      style: const TextStyle(fontSize: 13),
+                      style: const TextStyle(fontSize: 15),
                     ),
                   ],
                 ),
@@ -342,7 +342,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           Text(
             'Age (years)',
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 13,
               color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
             ),
           ),
@@ -352,16 +352,16 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
               hintText: '25',
-              hintStyle: TextStyle(fontSize: 13),
+              hintStyle: TextStyle(fontSize: 15),
             ),
-            style: const TextStyle(fontSize: 13),
+            style: const TextStyle(fontSize: 15),
           ),
           if (autoFilled) ...[
             const SizedBox(height: 6),
             Text(
               'Auto-filled from date of birth',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 color: isDark
                     ? const Color(0xFF8E8E93)
                     : const Color(0xFF6E6E73),
@@ -422,7 +422,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                         Text(
                           'Consider: ${result.differential}',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             color: isDark
                                 ? const Color(0xFF8E8E93)
                                 : const Color(0xFF6E6E73),
@@ -433,7 +433,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                       Text(
                         result.rationale,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 15,
                           height: 1.55,
                           color: isDark
                               ? const Color(0xFF8E8E93)
@@ -474,7 +474,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 ),
                 child: Text(
                   flag,
-                  style: const TextStyle(fontSize: 12, color: kWarnTextDark),
+                  style: const TextStyle(fontSize: 14, color: kWarnTextDark),
                 ),
               );
             }).toList(),
@@ -524,7 +524,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                           Text(
                             rec.section.label,
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: 15,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -532,7 +532,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                           Text(
                             rec.rationale,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 14,
                               color: isDark
                                   ? const Color(0xFF8E8E93)
                                   : const Color(0xFF6E6E73),

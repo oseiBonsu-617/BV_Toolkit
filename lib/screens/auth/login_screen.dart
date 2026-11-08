@@ -197,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
                 const Text(
                   'Enter your account email and we will send a secure reset link.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF6E6E73)),
+                  style: TextStyle(fontSize: 15, color: Color(0xFF6E6E73)),
                 ),
                 const SizedBox(height: 16),
                 TextField(

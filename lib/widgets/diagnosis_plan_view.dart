@@ -45,7 +45,7 @@ class DiagnosisPlanView extends StatelessWidget {
           child: Text(
             plan.name,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: primaryOf(context),
             ),
@@ -74,7 +74,7 @@ class DiagnosisPlanView extends StatelessWidget {
                   Expanded(
                     child: Text(
                       c,
-                      style: const TextStyle(fontSize: 13, height: 1.45),
+                      style: const TextStyle(fontSize: 15, height: 1.45),
                     ),
                   ),
                 ],
@@ -103,7 +103,7 @@ class DiagnosisPlanView extends StatelessWidget {
                 child: Text(
                   tier.label.toUpperCase(),
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: fg,
                     letterSpacing: 0.5,
@@ -120,14 +120,14 @@ class DiagnosisPlanView extends StatelessWidget {
                     Text(
                       o.title,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       o.detail,
-                      style: TextStyle(fontSize: 12, height: 1.5, color: muted),
+                      style: TextStyle(fontSize: 14, height: 1.5, color: muted),
                     ),
                   ],
                 ),
@@ -179,7 +179,7 @@ class DiagnosisPlanView extends StatelessWidget {
                     child: Text(
                       r,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: kWarnTextDark,
                         height: 1.4,
                       ),
@@ -197,7 +197,7 @@ class DiagnosisPlanView extends StatelessWidget {
   Widget _sectionHeading(String text, Color muted) => Text(
     text,
     style: TextStyle(
-      fontSize: 11,
+      fontSize: 13,
       fontWeight: FontWeight.w500,
       letterSpacing: 0.4,
       color: muted,
@@ -223,7 +223,7 @@ class DiagnosisPlanView extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: primaryOf(context),
                 ),
@@ -231,7 +231,7 @@ class DiagnosisPlanView extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 content,
-                style: TextStyle(fontSize: 12, height: 1.5, color: muted),
+                style: TextStyle(fontSize: 14, height: 1.5, color: muted),
               ),
             ],
           ),

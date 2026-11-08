@@ -265,7 +265,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // Replaces (not merges) the inherited style, so start from
                   // the theme's body style to keep its font family.
                   style: baseStyle.copyWith(
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                     color: selected ? Colors.white : unselectedText,
                   ),
@@ -285,7 +285,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Text(
             'Title',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               color: authSecondaryTextOf(context),
             ),
           ),

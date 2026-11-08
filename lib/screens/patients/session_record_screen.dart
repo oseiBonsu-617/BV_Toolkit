@@ -543,7 +543,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
                   Text(
                     'Derived from the entered measurements. Correlate with the full examination before prescribing. Tap Save to record this session.',
                     style: TextStyle(
-                      fontSize: 10.5,
+                      fontSize: 12.5,
                       height: 1.45,
                       fontStyle: FontStyle.italic,
                       color: isDark
@@ -603,7 +603,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
                   child: Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -641,7 +641,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
             child: Text(
               'Assessment: ${widget.assessmentImpression}',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 color: primaryOf(context),
                 fontWeight: FontWeight.w500,
               ),
@@ -808,7 +808,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
           InfoBox(
             child: const Text(
               'Uses phoria values above',
-              style: TextStyle(fontSize: 10),
+              style: TextStyle(fontSize: 12),
             ),
           ),
         ] else ...[
@@ -1055,7 +1055,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
                 Text(
                   f.label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     color: isDark
                         ? const Color(0xFF8E8E93)
                         : const Color(0xFF6E6E73),
@@ -1066,7 +1066,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
                     Text(
                       '${val.toStringAsFixed(0)}Δ',
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -1084,7 +1084,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
                         child: Text(
                           badge,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: badgeFg,
                           ),
@@ -1275,7 +1275,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
                 child: Text(
                   o.$2,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     color: sel ? Colors.white : null,
                   ),
                 ),
@@ -1312,7 +1312,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
                 Text(
                   e.value.$2,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1334,7 +1334,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
   String _fmtCm(double? v) => v == null ? '—' : '${v.toStringAsFixed(1)} cm';
 
   TextStyle _labelStyle() => const TextStyle(
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: FontWeight.w500,
     color: Color(0xFF8E8E93),
   );

@@ -390,7 +390,7 @@ class SessionDetailScreen extends StatelessWidget {
           Text(
             row.label,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
             ),
           ),
@@ -399,7 +399,7 @@ class SessionDetailScreen extends StatelessWidget {
               Text(
                 '${row.val.toStringAsFixed(0)}Δ',
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -417,7 +417,7 @@ class SessionDetailScreen extends StatelessWidget {
                   child: Text(
                     badge,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: badgeFg,
                     ),
@@ -558,7 +558,7 @@ class SessionDetailScreen extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
             ),
           ),
@@ -566,7 +566,7 @@ class SessionDetailScreen extends StatelessWidget {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
           ),
         ),
       ],

@@ -96,7 +96,7 @@ class ShortcutGrid extends StatelessWidget {
                               s.name,
                               maxLines: 1,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: fg,
                               ),

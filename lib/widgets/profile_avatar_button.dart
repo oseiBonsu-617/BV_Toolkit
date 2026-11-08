@@ -31,7 +31,7 @@ class ProfileAvatarButton extends StatelessWidget {
           child: Text(
             user?.initials ?? '?',
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
               color: Colors.white,
             ),

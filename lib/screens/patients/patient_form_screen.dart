@@ -166,7 +166,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: kBadBorder, width: 0.5),
               ),
-              child: Text(_error!, style: const TextStyle(fontSize: 13, color: kBadText)),
+              child: Text(_error!, style: const TextStyle(fontSize: 15, color: kBadText)),
             ),
           ],
           const SizedBox(height: 24),
@@ -180,7 +180,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
       Padding(
         padding: const EdgeInsets.only(left: 4, bottom: 6),
         child: Text(title.toUpperCase(), style: TextStyle(
-          fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.6,
+          fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 0.6,
           color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
         )),
       ),
@@ -211,7 +211,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     int maxLines = 1,
   }) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+      Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
           color: Color(0xFF8E8E93))),
       const SizedBox(height: 4),
       TextField(
@@ -227,7 +227,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   Widget _genderPicker(bool isDark) {
     const options = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
     return SizedBox(width: double.infinity, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Gender', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+      const Text('Gender', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
           color: Color(0xFF8E8E93))),
       const SizedBox(height: 8),
       Wrap(spacing: 8, runSpacing: 8,
@@ -244,7 +244,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
                 border: Border.all(
                   color: sel ? kPrimary : (isDark ? const Color(0xFF48484A) : const Color(0xFFE5E5EA))),
               ),
-              child: Text(g, style: TextStyle(fontSize: 13, color: sel ? Colors.white : null)),
+              child: Text(g, style: TextStyle(fontSize: 15, color: sel ? Colors.white : null)),
             ),
           );
         }).toList(),
@@ -256,7 +256,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
     return Row(children: [
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Date of birth', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
+          const Text('Date of birth', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500,
               color: Color(0xFF8E8E93))),
           const SizedBox(height: 4),
           Text(
@@ -271,7 +271,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
           TextButton(
             onPressed: () => setState(() => _dob = null),
             style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
-            child: const Text('Clear', style: TextStyle(color: Color(0xFF8E8E93), fontSize: 13)),
+            child: const Text('Clear', style: TextStyle(color: Color(0xFF8E8E93), fontSize: 15)),
           ),
         TextButton(
           onPressed: _pickDob,

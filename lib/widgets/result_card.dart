@@ -54,7 +54,7 @@ class ResultCard extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 12,
               letterSpacing: 0.5,
               color: labelColor,
             ),
@@ -72,7 +72,7 @@ class ResultCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               note!,
-              style: TextStyle(fontSize: 11, height: 1.5, color: noteColor),
+              style: TextStyle(fontSize: 13, height: 1.5, color: noteColor),
             ),
           ],
         ],
@@ -97,7 +97,7 @@ class InfoBox extends StatelessWidget {
       ),
       child: DefaultTextStyle(
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 13,
           height: 1.55,
           color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
         ),
@@ -118,7 +118,7 @@ class SectionLabel extends StatelessWidget {
       child: Text(
         text.toUpperCase(),
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.6,
           color: Theme.of(context).brightness == Brightness.dark
@@ -166,9 +166,11 @@ class CardTitle extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: primaryOf(context)),
           const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          Flexible(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            ),
           ),
         ],
       ),
@@ -200,7 +202,7 @@ class Pill extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: fg),
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg),
       ),
     );
   }
@@ -255,7 +257,7 @@ class SegmentedControl extends StatelessWidget {
                   labels[i],
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: isOn ? FontWeight.w500 : FontWeight.normal,
                     color: isOn
                         ? primaryOf(context)
@@ -303,7 +305,7 @@ class NumField extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 color: isDark
                     ? const Color(0xFF8E8E93)
                     : const Color(0xFF6E6E73),
@@ -319,14 +321,14 @@ class NumField extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: placeholder,
                 hintStyle: TextStyle(
-                  fontSize: 13,
+                  fontSize: 15,
                   color: isDark
                       ? const Color(0xFF636366)
                       : const Color(0xFFC7C7CC),
                 ),
                 errorText: isInvalid ? 'Enter a valid number' : null,
               ),
-              style: const TextStyle(fontSize: 13),
+              style: const TextStyle(fontSize: 15),
             ),
           ],
         );
@@ -391,7 +393,7 @@ class PhoriaField extends StatelessWidget {
               Text(
                 'Direction',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   color: isDark
                       ? const Color(0xFF8E8E93)
                       : const Color(0xFF6E6E73),
@@ -412,7 +414,7 @@ class PhoriaField extends StatelessWidget {
                     value: direction,
                     isExpanded: true,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 15,
                       color: isDark ? Colors.white : Colors.black,
                     ),
                     dropdownColor: isDark
@@ -424,7 +426,7 @@ class PhoriaField extends StatelessWidget {
                             value: d,
                             child: Text(
                               d,
-                              style: const TextStyle(fontSize: 13),
+                              style: const TextStyle(fontSize: 15),
                             ),
                           ),
                         )
@@ -586,7 +588,7 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 subtitle!,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
+                style: const TextStyle(fontSize: 15, color: Color(0xFF8E8E93)),
                 textAlign: TextAlign.center,
               ),
             ],

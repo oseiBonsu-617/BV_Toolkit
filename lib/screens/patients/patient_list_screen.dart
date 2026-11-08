@@ -183,7 +183,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
                             Text(
                               '${p.age} y/o',
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 color: Color(0xFF8E8E93),
                               ),
                             ),
@@ -191,7 +191,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
                               const Text(
                                 ' · ',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 14,
                                   color: Color(0xFF8E8E93),
                                 ),
                               ),
@@ -200,7 +200,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
                             Text(
                               p.gender!,
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 color: Color(0xFF8E8E93),
                               ),
                             ),
@@ -208,14 +208,14 @@ class _PatientListScreenState extends State<PatientListScreen> {
                             const Text(
                               ' · ',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 color: Color(0xFF8E8E93),
                               ),
                             ),
                             Text(
                               'MRN: ${p.mrn}',
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 color: Color(0xFF8E8E93),
                               ),
                             ),

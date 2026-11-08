@@ -25,7 +25,7 @@ class ToolsHubScreen extends StatelessWidget {
               child: Text(
                 group,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).brightness == Brightness.dark
                       ? const Color(0xFF8E8E93)

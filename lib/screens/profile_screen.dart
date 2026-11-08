@@ -51,12 +51,12 @@ class ProfileScreen extends StatelessWidget {
           textAlign: TextAlign.center),
       const SizedBox(height: 4),
       Text(user.email,
-          style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
+          style: const TextStyle(fontSize: 15, color: Color(0xFF8E8E93)),
           textAlign: TextAlign.center),
       if (user.clinic != null && user.clinic!.isNotEmpty) ...[
         const SizedBox(height: 2),
         Text(user.clinic!,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
+            style: const TextStyle(fontSize: 15, color: Color(0xFF8E8E93)),
             textAlign: TextAlign.center),
       ],
     ]);
@@ -140,11 +140,11 @@ class ProfileScreen extends StatelessWidget {
         SizedBox(
           width: 90,
           child: Text(label, style: TextStyle(
-            fontSize: 13,
+            fontSize: 15,
             color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
           )),
         ),
-        Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
+        Expanded(child: Text(value, style: const TextStyle(fontSize: 15))),
       ]),
     );
   }
@@ -298,7 +298,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
         _lf('Clinic (optional)', TextField(controller: _clinic,
             decoration: const InputDecoration(hintText: 'City Eye Centre'))),
         const SizedBox(height: 12),
-        Text('Title', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500,
+        Text('Title', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500,
             color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73))),
         const SizedBox(height: 6),
         Wrap(
@@ -317,14 +317,14 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                     color: sel ? kPrimary : (isDark ? const Color(0xFF48484A) : const Color(0xFFE5E5EA))),
                 ),
                 child: Text(t, style: TextStyle(
-                  fontSize: 13, color: sel ? Colors.white : null)),
+                  fontSize: 15, color: sel ? Colors.white : null)),
               ),
             );
           }).toList(),
         ),
         if (_error != null) ...[
           const SizedBox(height: 12),
-          Text(_error!, style: const TextStyle(fontSize: 12, color: kBadText)),
+          Text(_error!, style: const TextStyle(fontSize: 14, color: kBadText)),
         ],
         const SizedBox(height: 20),
         SizedBox(height: 48,
@@ -341,7 +341,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
 
   Widget _lf(String label, Widget field) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+      Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
       const SizedBox(height: 6),
       field,
     ]);
@@ -407,11 +407,11 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
         _pwField('Confirm new password', _confirm, TextInputAction.done, onSubmit: (_) => _save()),
         if (_error != null) ...[
           const SizedBox(height: 10),
-          Text(_error!, style: const TextStyle(fontSize: 12, color: kBadText)),
+          Text(_error!, style: const TextStyle(fontSize: 14, color: kBadText)),
         ],
         if (_success != null) ...[
           const SizedBox(height: 10),
-          Text(_success!, style: const TextStyle(fontSize: 12, color: kOkText)),
+          Text(_success!, style: const TextStyle(fontSize: 14, color: kOkText)),
         ],
         const SizedBox(height: 20),
         SizedBox(height: 48,
@@ -429,7 +429,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
   Widget _pwField(String label, TextEditingController ctrl, TextInputAction action,
       {void Function(String)? onSubmit}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+      Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
       const SizedBox(height: 6),
       TextField(
         controller: ctrl,

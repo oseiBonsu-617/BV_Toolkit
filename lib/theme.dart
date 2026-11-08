@@ -82,12 +82,12 @@ ThemeData buildTheme(Brightness brightness) {
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return TextStyle(
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
             color: isDark ? kPrimaryOnDark : kPrimary,
           );
         }
-        return const TextStyle(fontSize: 10, color: Color(0xFF8E8E93));
+        return const TextStyle(fontSize: 12, color: Color(0xFF8E8E93));
       }),
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
     ),
@@ -109,8 +109,8 @@ ThemeData buildTheme(Brightness brightness) {
         borderSide: const BorderSide(color: kBadText, width: 1.5),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      labelStyle: TextStyle(fontSize: 12, color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73)),
-      errorStyle: const TextStyle(fontSize: 10, color: kBadText),
+      labelStyle: TextStyle(fontSize: 14, color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73)),
+      errorStyle: const TextStyle(fontSize: 12, color: kBadText),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -162,7 +162,7 @@ void showAppSnackBar(BuildContext context, String message, {bool error = false})
   ScaffoldMessenger.of(context)
     ..clearSnackBars()
     ..showSnackBar(SnackBar(
-      content: Text(message, style: const TextStyle(fontSize: 13)),
+      content: Text(message, style: const TextStyle(fontSize: 15)),
       behavior: SnackBarBehavior.floating,
       backgroundColor: error ? kBadText : const Color(0xFF1C1C1E),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

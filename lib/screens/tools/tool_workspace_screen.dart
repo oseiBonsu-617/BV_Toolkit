@@ -119,7 +119,7 @@ class ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
             Text(
               tool.description,
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: FontWeight.normal,
                 color: Color(0xFF8E8E93),
               ),
@@ -131,7 +131,7 @@ class ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
             TextButton(
               key: const Key('tool-example'),
               onPressed: () => _graphicalKey.currentState?.loadExample(),
-              child: const Text('Example', style: TextStyle(fontSize: 13)),
+              child: const Text('Example', style: TextStyle(fontSize: 15)),
             ),
         ],
       ),

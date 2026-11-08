@@ -337,7 +337,7 @@ class _PhoriaScreenState extends State<PhoriaScreen> {
                 InfoBox(
                   child: const Text(
                     'Uses phoria values above',
-                    style: TextStyle(fontSize: 10),
+                    style: TextStyle(fontSize: 12),
                   ),
                 ),
               ] else ...[

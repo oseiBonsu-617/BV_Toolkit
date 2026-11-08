@@ -781,7 +781,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
             leading: Icon(icon, color: primaryOf(context), size: 18),
             title: Text(
               title,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
             ),
             iconColor: primaryOf(context),
             collapsedIconColor: const Color(0xFF8E8E93),
@@ -800,7 +800,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
         Text(
           'Flipper fail side',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 13,
             color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
           ),
         ),
@@ -816,7 +816,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
               value: _facFail,
               isExpanded: true,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 15,
                 color: isDark ? Colors.white : Colors.black,
               ),
               dropdownColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
@@ -824,7 +824,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
                   .map(
                     (opt) => DropdownMenuItem(
                       value: opt.$1,
-                      child: Text(opt.$2, style: const TextStyle(fontSize: 13)),
+                      child: Text(opt.$2, style: const TextStyle(fontSize: 15)),
                     ),
                   )
                   .toList(),
@@ -873,7 +873,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
           Text(
             isPrimary ? 'Most likely' : 'Differential $index',
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.5,
               color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
@@ -886,7 +886,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
                 child: Text(
                   d.name,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -911,7 +911,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
                 Text(
                   'Not confirmed:',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 12,
                     color: isDark
                         ? const Color(0xFF8E8E93)
                         : const Color(0xFF6E6E73),
@@ -945,7 +945,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
                 ],
               ),
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 height: 1.5,
                 color: isDark
                     ? const Color(0xFF8E8E93)
@@ -983,7 +983,7 @@ class _DiagnosisScreenState extends State<DiagnosisScreen> {
             ),
           ],
         ),
-        style: const TextStyle(fontSize: 11, height: 1.5),
+        style: const TextStyle(fontSize: 13, height: 1.5),
       ),
     );
   }
