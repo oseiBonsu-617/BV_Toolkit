@@ -24,6 +24,19 @@ void main() {
       expect(texts, hasLength(kClinicalPearls.length));
     });
 
+    test('the AC/A pearl matches its Reference entry', () {
+      final pearl = kClinicalPearls[11];
+      expect(pearl.refTitle, 'AC/A Ratio Norms');
+      expect(
+        pearl.text,
+        'A normal AC/A ratio is about 3–5 Δ/D (gradient method).',
+      );
+      expect(
+        referenceEntryByTitle(pearl.refTitle)!.bullets,
+        contains('Normal: 3–5 Δ/D (gradient method)'),
+      );
+    });
+
     test('first and last are in the agreed order', () {
       expect(kClinicalPearls.first.refTitle, "Sheard's Criterion");
       expect(kClinicalPearls.last.refTitle, 'Amblyopia');

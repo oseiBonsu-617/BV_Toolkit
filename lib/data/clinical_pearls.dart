@@ -56,7 +56,7 @@ const List<ClinicalPearl> kClinicalPearls = [
     'AC/A — Gradient Method',
   ),
   ClinicalPearl(
-    'A normal AC/A ratio is about 4 ± 2 Δ/D.',
+    'A normal AC/A ratio is about 3–5 Δ/D (gradient method).',
     'AC/A Ratio Norms',
   ),
   ClinicalPearl(

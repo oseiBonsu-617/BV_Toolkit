@@ -127,9 +127,9 @@ class _MainShellState extends State<MainShell> {
   /// [title] there — unless a route on the way refuses to pop.
   Future<void> _openReference(String title) async {
     _openTab(ShellTab.reference);
-    if (await _popToRoot(ShellTab.reference)) {
-      _referenceRequest.value = title;
-    }
+    final popped = await _popToRoot(ShellTab.reference);
+    if (!mounted) return;
+    if (popped) _referenceRequest.value = title;
   }
 
   @override
