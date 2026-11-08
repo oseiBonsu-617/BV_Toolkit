@@ -4,14 +4,13 @@ import '../../models/graphical_analysis.dart';
 import '../../widgets/result_card.dart';
 import '../../widgets/zcsbv_graph.dart';
 
-class GraphicalAnalysisScreen extends StatefulWidget {
-  const GraphicalAnalysisScreen({super.key});
+class GraphicalAnalysisBody extends StatefulWidget {
+  const GraphicalAnalysisBody({super.key});
   @override
-  State<GraphicalAnalysisScreen> createState() =>
-      _GraphicalAnalysisScreenState();
+  State<GraphicalAnalysisBody> createState() => GraphicalAnalysisBodyState();
 }
 
-class _GraphicalAnalysisScreenState extends State<GraphicalAnalysisScreen> {
+class GraphicalAnalysisBodyState extends State<GraphicalAnalysisBody> {
   final _scroll = ScrollController();
 
   final _pd = TextEditingController();
@@ -44,10 +43,20 @@ class _GraphicalAnalysisScreenState extends State<GraphicalAnalysisScreen> {
   void dispose() {
     _scroll.dispose();
     for (final c in [
-      _pd, _pn, _ipd, _nd,
-      _boDBlur, _boDBreak, _boNBlur, _boNBreak,
-      _biDBlur, _biDBreak, _biNBlur, _biNBreak,
-      _nra, _pra,
+      _pd,
+      _pn,
+      _ipd,
+      _nd,
+      _boDBlur,
+      _boDBreak,
+      _boNBlur,
+      _boNBreak,
+      _biDBlur,
+      _biDBreak,
+      _biNBlur,
+      _biNBreak,
+      _nra,
+      _pra,
     ]) {
       c.dispose();
     }
@@ -66,7 +75,7 @@ class _GraphicalAnalysisScreenState extends State<GraphicalAnalysisScreen> {
     return (v != null && v > 0) ? v : null;
   }
 
-  void _loadExample() {
+  void loadExample() {
     HapticFeedback.selectionClick();
     setState(() {
       _pd.text = '1';
@@ -144,62 +153,35 @@ class _GraphicalAnalysisScreenState extends State<GraphicalAnalysisScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Graphical analysis'),
-            Text(
-              'ZCSBV plot',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.normal,
-                color: Color(0xFF8E8E93),
-              ),
-            ),
-          ],
+    return ListView(
+      controller: _scroll,
+      padding: const EdgeInsets.all(12),
+      children: [
+        _phoriaCard(),
+        _reserveCard(
+          title: 'Positive fusional vergence (BO)',
+          icon: Icons.arrow_forward,
+          dBlur: _boDBlur,
+          dBreak: _boDBreak,
+          nBlur: _boNBlur,
+          nBreak: _boNBreak,
         ),
-        actions: [
-          TextButton(
-            onPressed: _loadExample,
-            child: const Text('Example', style: TextStyle(fontSize: 13)),
-          ),
-        ],
-      ),
-      body: ListView(
-        controller: _scroll,
-        padding: const EdgeInsets.all(12),
-        children: [
-          _phoriaCard(),
-          _reserveCard(
-            title: 'Positive fusional vergence (BO)',
-            icon: Icons.arrow_forward,
-            dBlur: _boDBlur,
-            dBreak: _boDBreak,
-            nBlur: _boNBlur,
-            nBreak: _boNBreak,
-          ),
-          _reserveCard(
-            title: 'Negative fusional vergence (BI)',
-            icon: Icons.arrow_back,
-            dBlur: _biDBlur,
-            dBreak: _biDBreak,
-            nBlur: _biNBlur,
-            nBreak: _biNBreak,
-          ),
-          _relativeAccCard(),
-          ElevatedButton(
-            onPressed: _plot,
-            child: const Text('Plot & analyse'),
-          ),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _buildOutput(),
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
+        _reserveCard(
+          title: 'Negative fusional vergence (BI)',
+          icon: Icons.arrow_back,
+          dBlur: _biDBlur,
+          dBreak: _biDBreak,
+          nBlur: _biNBlur,
+          nBreak: _biNBreak,
+        ),
+        _relativeAccCard(),
+        ElevatedButton(onPressed: _plot, child: const Text('Plot & analyse')),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _buildOutput(),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
@@ -350,11 +332,19 @@ class _GraphicalAnalysisScreenState extends State<GraphicalAnalysisScreen> {
           Row(
             children: [
               Expanded(
-                child: NumField(label: 'Blur (Δ)', controller: dBlur, placeholder: '—'),
+                child: NumField(
+                  label: 'Blur (Δ)',
+                  controller: dBlur,
+                  placeholder: '—',
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: NumField(label: 'Break (Δ)', controller: dBreak, placeholder: '15'),
+                child: NumField(
+                  label: 'Break (Δ)',
+                  controller: dBreak,
+                  placeholder: '15',
+                ),
               ),
             ],
           ),
@@ -362,11 +352,19 @@ class _GraphicalAnalysisScreenState extends State<GraphicalAnalysisScreen> {
           Row(
             children: [
               Expanded(
-                child: NumField(label: 'Blur (Δ)', controller: nBlur, placeholder: '17'),
+                child: NumField(
+                  label: 'Blur (Δ)',
+                  controller: nBlur,
+                  placeholder: '17',
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: NumField(label: 'Break (Δ)', controller: nBreak, placeholder: '21'),
+                child: NumField(
+                  label: 'Break (Δ)',
+                  controller: nBreak,
+                  placeholder: '21',
+                ),
               ),
             ],
           ),
@@ -434,10 +432,19 @@ class _GraphicalAnalysisScreenState extends State<GraphicalAnalysisScreen> {
     final stats = <(String, String)>[
       ('Distance phoria', ph(i.distPhoria)),
       ('Near phoria', ph(i.nearPhoria)),
-      ('Near demand', '${g.nearDemandV.toStringAsFixed(1)}Δ @ ${g.accNear.toStringAsFixed(2)}D'),
-      ('PFV blur / break — distance', pair(i.distBoBlur, i.distBoBreak, 'Δ BO')),
+      (
+        'Near demand',
+        '${g.nearDemandV.toStringAsFixed(1)}Δ @ ${g.accNear.toStringAsFixed(2)}D',
+      ),
+      (
+        'PFV blur / break — distance',
+        pair(i.distBoBlur, i.distBoBreak, 'Δ BO'),
+      ),
       ('PFV blur / break — near', pair(i.nearBoBlur, i.nearBoBreak, 'Δ BO')),
-      ('NFV blur / break — distance', pair(i.distBiBlur, i.distBiBreak, 'Δ BI')),
+      (
+        'NFV blur / break — distance',
+        pair(i.distBiBlur, i.distBiBreak, 'Δ BI'),
+      ),
       ('NFV blur / break — near', pair(i.nearBiBlur, i.nearBiBreak, 'Δ BI')),
       if (i.nra != null) ('NRA at near', '+${i.nra!.toStringAsFixed(2)}D'),
       if (i.pra != null) ('PRA at near', '−${i.pra!.toStringAsFixed(2)}D'),
@@ -448,7 +455,10 @@ class _GraphicalAnalysisScreenState extends State<GraphicalAnalysisScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CardTitle(icon: Icons.table_chart_outlined, text: 'Measurements'),
+          const CardTitle(
+            icon: Icons.table_chart_outlined,
+            text: 'Measurements',
+          ),
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
@@ -459,8 +469,10 @@ class _GraphicalAnalysisScreenState extends State<GraphicalAnalysisScreen> {
             children: stats
                 .map(
                   (s) => Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
                       color: isDark
                           ? const Color(0xFF2C2C2E)
@@ -488,7 +500,9 @@ class _GraphicalAnalysisScreenState extends State<GraphicalAnalysisScreen> {
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white : const Color(0xFF1C1C1E),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1C1C1E),
                           ),
                         ),
                       ],
