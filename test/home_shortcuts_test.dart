@@ -11,6 +11,7 @@ import 'package:bv_toolkit/services/preferences_service.dart';
 
 void main() {
   final tabs = <int>[];
+  final rootTabs = <int>[];
   final tools = <String>[];
   final patients = <String>[];
   late PreferencesService prefs;
@@ -23,6 +24,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     tabs.clear();
+    rootTabs.clear();
     tools.clear();
     patients.clear();
     SharedPreferences.setMockInitialValues(stored);
@@ -38,6 +40,7 @@ void main() {
         child: MaterialApp(
           home: ShellScope(
             openTab: tabs.add,
+            openTabAtRoot: rootTabs.add,
             openTool: tools.add,
             openPatient: patients.add,
             child: const HomeScreen(),
@@ -119,5 +122,12 @@ void main() {
     await pumpHome(tester);
     expect(find.byKey(const Key('home-add-first-patient')), findsOneWidget);
     expect(find.byKey(const Key('home-see-all')), findsOneWidget);
+  });
+
+  testWidgets('See all opens the Patients tab at its root', (tester) async {
+    await pumpHome(tester);
+    await tester.tap(find.byKey(const Key('home-see-all')));
+    expect(rootTabs, [ShellTab.patients]);
+    expect(tabs, isEmpty);
   });
 }

@@ -61,6 +61,14 @@ class _MainShellState extends State<MainShell> {
     if (tab != _tab) setState(() => _tab = tab);
   }
 
+  /// Pops [tab] to its root while it is still hidden, then shows it. If a
+  /// route refuses to pop (an unsaved session), it stays and the tab is shown
+  /// with it, so the user sees what the discard prompt is about.
+  Future<void> _openTabAtRoot(int tab) async {
+    await _popToRoot(tab);
+    if (mounted) _openTab(tab);
+  }
+
   void _onDestinationSelected(int tab) {
     HapticFeedback.selectionClick();
     if (tab == _tab) {
@@ -125,6 +133,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     return ShellScope(
       openTab: _openTab,
+      openTabAtRoot: _openTabAtRoot,
       openTool: _openTool,
       openPatient: _openPatient,
       child: PopScope(

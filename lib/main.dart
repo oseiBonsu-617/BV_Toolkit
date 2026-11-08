@@ -38,7 +38,10 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: auth),
-        ChangeNotifierProvider(create: (_) => PreferencesService()..load()),
+        ChangeNotifierProvider(
+          create: (_) => PreferencesService()..load(),
+          lazy: false,
+        ),
         ChangeNotifierProxyProvider<AuthService, PatientService>(
           create: (_) => PatientService(),
           update: (_, authSvc, patients) {

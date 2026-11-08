@@ -276,10 +276,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(selectedTab(tester), 1);
     expect(find.text('guarded screen'), findsOneWidget);
-    expect(
-      find.byType(PatientDetailScreen, skipOffstage: false),
-      findsNothing,
-    );
+    expect(find.byType(PatientDetailScreen, skipOffstage: false), findsNothing);
   });
 
   testWidgets('openTool does not pop a guarded route or push over it', (
@@ -314,5 +311,29 @@ void main() {
     expect(chipSelected(tester, 'graphical'), isTrue);
     await tapKey(tester, 'tool-chip-phoria');
     expect(find.text('7'), findsOneWidget);
+  });
+
+  testWidgets('See all shows the Patients list even with a patient open', (
+    tester,
+  ) async {
+    await pumpShell(tester);
+    shellScope(tester).openPatient('p1');
+    await tester.pumpAndSettle();
+    await tapTab(tester, 'Home');
+    await tapKey(tester, 'home-see-all');
+    expect(selectedTab(tester), 1);
+    expect(find.byType(PatientListScreen), findsOneWidget);
+    expect(find.byType(PatientDetailScreen, skipOffstage: false), findsNothing);
+  });
+
+  testWidgets('See all keeps a guarded route and shows it', (tester) async {
+    await pumpShell(tester);
+    await tapTab(tester, 'Patients');
+    pushOnPatients(tester, guardedPage);
+    await tester.pumpAndSettle();
+    await tapTab(tester, 'Home');
+    await tapKey(tester, 'home-see-all');
+    expect(selectedTab(tester), 1);
+    expect(find.text('guarded screen'), findsOneWidget);
   });
 }

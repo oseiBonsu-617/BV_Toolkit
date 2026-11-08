@@ -11,12 +11,16 @@ class ShellScope extends InheritedWidget {
   const ShellScope({
     super.key,
     required this.openTab,
+    required this.openTabAtRoot,
     required this.openTool,
     required this.openPatient,
     required super.child,
   });
 
   final void Function(int tab) openTab;
+
+  /// Shows [tab] popped back to its first screen (e.g. the patient list).
+  final void Function(int tab) openTabAtRoot;
   final void Function(String toolId) openTool;
   final void Function(String patientId) openPatient;
 

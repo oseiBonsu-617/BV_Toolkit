@@ -61,7 +61,7 @@ class HomeScreen extends StatelessWidget {
             TextButton(
               key: const Key('home-see-all'),
               onPressed: () =>
-                  ShellScope.of(context).openTab(ShellTab.patients),
+                  ShellScope.of(context).openTabAtRoot(ShellTab.patients),
               child: const Text('See all'),
             ),
           ),

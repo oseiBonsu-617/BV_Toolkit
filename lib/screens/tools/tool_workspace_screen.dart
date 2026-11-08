@@ -53,6 +53,7 @@ class ToolWorkspaceScreen extends StatefulWidget {
 
 class ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
   final _graphicalKey = GlobalKey<GraphicalAnalysisBodyState>();
+  final _chipKeys = {for (final t in kTools) t.id: GlobalKey()};
   late int _index;
 
   @override
@@ -60,13 +61,51 @@ class ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
     super.initState();
     final i = kTools.indexWhere((t) => t.id == widget.initialToolId);
     _index = i < 0 ? 0 : i;
+    _revealSelectedChip();
   }
 
   /// Shows the tool [id]; every tool keeps what was typed into it.
   void switchTo(String id) {
     final i = kTools.indexWhere((t) => t.id == id);
-    if (i >= 0 && i != _index) setState(() => _index = i);
+    if (i >= 0 && i != _index) {
+      setState(() => _index = i);
+      _revealSelectedChip();
+    }
   }
+
+  /// After the frame, scrolls the switcher strip just enough to show the
+  /// selected chip in full.
+  void _revealSelectedChip() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final chip = _chipKeys[kTools[_index].id]!.currentContext;
+      if (!mounted || chip == null) return;
+      // At most one of these moves the strip: the chip is cut off either at
+      // the end or at the start.
+      for (final policy in const [
+        ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+      ]) {
+        Scrollable.ensureVisible(
+          chip,
+          alignmentPolicy: policy,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
+  }
+
+  /// The body of each tool. The stack below is built in [kTools] order from
+  /// this, so a chip and the body it shows can't drift apart.
+  Widget _bodyFor(String id) => switch (id) {
+    'phoria' => const PhoriaScreen(),
+    'vergence' => const VergenceScreen(),
+    'accommodation' => const AccommodationScreen(),
+    'analysis' => const AnalysisScreen(),
+    'graphical' => GraphicalAnalysisBody(key: _graphicalKey),
+    'diagnose' => const DiagnosisScreen(),
+    _ => throw StateError('No body for tool "$id"'),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -100,21 +139,29 @@ class ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
         children: [
           SizedBox(
             height: 52,
-            child: ListView.separated(
+            // Not a lazy list: every chip is built, so any of them can be
+            // scrolled into view.
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              itemCount: kTools.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (_, i) {
-                final t = kTools[i];
-                return ChoiceChip(
-                  key: Key('tool-chip-${t.id}'),
-                  label: Text(t.shortLabel),
-                  selected: i == _index,
-                  selectedColor: kPrimary.withValues(alpha: 0.15),
-                  onSelected: (_) => switchTo(t.id),
-                );
-              },
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (i, t) in kTools.indexed) ...[
+                    if (i > 0) const SizedBox(width: 8),
+                    KeyedSubtree(
+                      key: _chipKeys[t.id],
+                      child: ChoiceChip(
+                        key: Key('tool-chip-${t.id}'),
+                        label: Text(t.shortLabel),
+                        selected: i == _index,
+                        selectedColor: kPrimary.withValues(alpha: 0.15),
+                        onSelected: (_) => switchTo(t.id),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
           Expanded(
@@ -122,14 +169,7 @@ class ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
               switchTo: switchTo,
               child: IndexedStack(
                 index: _index,
-                children: [
-                  const PhoriaScreen(),
-                  const VergenceScreen(),
-                  const AccommodationScreen(),
-                  const AnalysisScreen(),
-                  GraphicalAnalysisBody(key: _graphicalKey),
-                  const DiagnosisScreen(),
-                ],
+                children: [for (final t in kTools) _bodyFor(t.id)],
               ),
             ),
           ),

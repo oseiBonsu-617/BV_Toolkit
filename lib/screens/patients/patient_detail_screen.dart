@@ -60,6 +60,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     if (patient == null) return;
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(

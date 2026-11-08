@@ -336,12 +336,23 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
         data: data,
       );
       _saved = true;
-      if (mounted) await context.read<PatientService>().touch(widget.patientId);
+      if (mounted) await _markPatientRecent();
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) showAppSnackBar(context, e.toString(), error: true);
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  /// Moves the patient up the recent list. The session is already saved, so
+  /// a failure here is only logged: it must not keep the user on the form or
+  /// show an error.
+  Future<void> _markPatientRecent() async {
+    try {
+      await context.read<PatientService>().touch(widget.patientId);
+    } catch (e) {
+      debugPrint('Could not mark patient ${widget.patientId} as recent: $e');
     }
   }
 
