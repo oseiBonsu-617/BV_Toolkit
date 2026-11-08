@@ -384,6 +384,64 @@ void main() {
       expect(find.text(npcBullet), findsOneWidget);
     });
 
+    testWidgets('lists the requested entry first, expanded', (tester) async {
+      await pumpShell(tester);
+      shellScope(tester).openReference('Amblyopia');
+      await tester.pumpAndSettle();
+      // 'Amblyopia' also matches entries that come before it in Reference.
+      final firstTile = find.byType(ExpansionTile).first;
+      expect(
+        find.descendant(of: firstTile, matching: find.text('Amblyopia')),
+        findsOneWidget,
+      );
+      expect(
+        tester.getTopLeft(entryTitle('Amblyopia')).dy,
+        lessThan(tester.getTopLeft(entryTitle('Accommodative Esotropia')).dy),
+      );
+      expect(
+        find.text(
+          'Strabismic: suppression of deviating eye; AC > 10Δ most common',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the requested entry stops being kept open once the user '
+        'clears the search and picks a category', (tester) async {
+      await pumpShell(tester);
+      shellScope(tester).openReference('NPC Norms');
+      await tester.pumpAndSettle();
+      expect(find.text(npcBullet), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.cancel_rounded));
+      await tester.pumpAndSettle();
+      // The Norms chip starts just off the right edge of the chip row.
+      final normsChip = find.text('Norms', skipOffstage: false);
+      await tester.ensureVisible(normsChip);
+      await tester.pumpAndSettle();
+      await tester.tap(normsChip);
+      await tester.pumpAndSettle();
+      expect(entryTitle('NPC Norms'), findsOneWidget);
+      expect(find.text(npcBullet), findsNothing);
+    });
+
+    testWidgets('editing the search lets go of the requested entry', (
+      tester,
+    ) async {
+      await pumpShell(tester);
+      shellScope(tester).openReference('NPC Norms');
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(ReferenceScreen),
+          matching: find.byType(TextField),
+        ),
+        'Norms',
+      );
+      await tester.pumpAndSettle();
+      expect(entryTitle('NPC Norms'), findsOneWidget);
+      expect(find.text(npcBullet), findsNothing);
+    });
+
     testWidgets('pops a screen pushed on the Reference tab first', (
       tester,
     ) async {

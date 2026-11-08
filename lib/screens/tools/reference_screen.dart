@@ -23,7 +23,8 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
   String _category = 'Vergence anomalies';
   final _focusNode = FocusNode();
 
-  /// The entry a request asked for; its tile starts expanded.
+  /// The entry a request asked for; it is listed first and its tile starts
+  /// expanded, until the user changes the search or the category.
   String? _openTitle;
 
   /// Bumped on each request so the tiles are rebuilt and the requested one
@@ -70,7 +71,13 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
 
   List<ReferenceEntry> get _shown {
     if (_query.isNotEmpty) {
-      return kReferenceEntries.where((e) => e.matches(_query)).toList();
+      final found = kReferenceEntries.where((e) => e.matches(_query)).toList();
+      // A requested entry comes first; other matches keep Reference order.
+      if (_openTitle != null && _query == _openTitle) {
+        final i = found.indexWhere((e) => e.title == _openTitle);
+        if (i > 0) found.insert(0, found.removeAt(i));
+      }
+      return found;
     }
     return kReferenceEntries.where((e) => e.cat == _category).toList();
   }
@@ -136,7 +143,10 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
         child: TextField(
           controller: _searchCtrl,
           focusNode: _focusNode,
-          onChanged: (v) => setState(() => _query = v.trim()),
+          onChanged: (v) => setState(() {
+            _query = v.trim();
+            _openTitle = null;
+          }),
           style: const TextStyle(fontSize: 14),
           decoration: InputDecoration(
             filled: false,
@@ -151,7 +161,10 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
                 ? GestureDetector(
                     onTap: () {
                       _searchCtrl.clear();
-                      setState(() => _query = '');
+                      setState(() {
+                        _query = '';
+                        _openTitle = null;
+                      });
                       _focusNode.unfocus();
                     },
                     child: const Icon(
@@ -178,7 +191,10 @@ class _ReferenceScreenState extends State<ReferenceScreen> {
         children: kReferenceCategories.map((cat) {
           final selected = cat == _category;
           return GestureDetector(
-            onTap: () => setState(() => _category = cat),
+            onTap: () => setState(() {
+              _category = cat;
+              _openTitle = null;
+            }),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               margin: const EdgeInsets.only(right: 8),
