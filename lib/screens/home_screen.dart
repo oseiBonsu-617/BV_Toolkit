@@ -35,11 +35,24 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   SessionService? _sessions;
   Future<WeekSummary>? _summary;
 
   DateTime _now() => (widget.now ?? DateTime.now)();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// Home can sit in the background across hours or days: on return, redo
+  /// the greeting, date and picks (by rebuilding) and this week's count.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _reloadSummary();
+  }
 
   @override
   void didChangeDependencies() {
@@ -56,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sessions?.removeListener(_reloadSummary);
     super.dispose();
   }

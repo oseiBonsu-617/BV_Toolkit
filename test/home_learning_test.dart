@@ -52,6 +52,7 @@ void main() {
   Future<void> pumpHome(
     WidgetTester tester, {
     DateTime? now,
+    DateTime Function()? clock,
     Summary summary = (sessions: 0, patients: 0),
     Future<Summary> Function(DateTime since)? weekSummary,
     String displayName = 'Osei Smith',
@@ -86,7 +87,7 @@ void main() {
             openPatient: (_) {},
             openReference: references.add,
             child: HomeScreen(
-              now: () => at,
+              now: clock ?? () => at,
               weekSummary: sessions != null
                   ? null
                   : weekSummary ??
@@ -295,6 +296,49 @@ void main() {
       expect(find.text('Phoria'), findsOneWidget);
       expect(find.text('1Δ exo'), findsOneWidget);
       expect(find.text('3Δ exo'), findsOneWidget);
+    });
+  });
+
+  group('app resume', () {
+    Future<void> resume(WidgetTester tester) async {
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('updates the greeting for the new time of day', (tester) async {
+      var t = DateTime(2026, 11, 8, 9);
+      await pumpHome(tester, clock: () => t);
+      expect(
+        inKey('home-greeting', find.text('Good morning, Osei')),
+        findsOneWidget,
+      );
+      t = DateTime(2026, 11, 8, 14);
+      await resume(tester);
+      expect(
+        inKey('home-greeting', find.text('Good afternoon, Osei')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a new day brings a new pearl and a new week a new count', (
+      tester,
+    ) async {
+      var t = DateTime(2026, 11, 8, 20); // Sunday evening
+      await pumpHome(tester, clock: () => t);
+      expect(sinces, [DateTime(2026, 11, 2)]);
+      t = DateTime(2026, 11, 9, 8); // Monday morning
+      await resume(tester);
+      expect(sinces.last, DateTime(2026, 11, 9));
+      expect(inKey('home-pearl', find.text(pearlFor(t).text)), findsOneWidget);
+      expect(
+        inKey('home-condition', find.text(conditionFor(t).title)),
+        findsOneWidget,
+      );
+      expect(
+        inKey('home-greeting', find.text('Monday, 9 November')),
+        findsOneWidget,
+      );
     });
   });
 }
