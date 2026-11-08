@@ -14,6 +14,7 @@ void main() {
   final rootTabs = <int>[];
   final tools = <String>[];
   final patients = <String>[];
+  final references = <String>[];
   late PreferencesService prefs;
 
   Future<void> pumpHome(
@@ -27,6 +28,7 @@ void main() {
     rootTabs.clear();
     tools.clear();
     patients.clear();
+    references.clear();
     SharedPreferences.setMockInitialValues(stored);
     prefs = PreferencesService();
     await prefs.load();
@@ -43,6 +45,7 @@ void main() {
             openTabAtRoot: rootTabs.add,
             openTool: tools.add,
             openPatient: patients.add,
+            openReference: references.add,
             child: const HomeScreen(),
           ),
         ),

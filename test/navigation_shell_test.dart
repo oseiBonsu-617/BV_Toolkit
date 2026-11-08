@@ -10,6 +10,7 @@ import 'package:bv_toolkit/screens/patients/patient_list_screen.dart';
 import 'package:bv_toolkit/screens/profile_screen.dart';
 import 'package:bv_toolkit/screens/shell/main_shell.dart';
 import 'package:bv_toolkit/screens/shell/shell_scope.dart';
+import 'package:bv_toolkit/screens/tools/reference_screen.dart';
 import 'package:bv_toolkit/services/auth_service.dart';
 import 'package:bv_toolkit/services/patient_service.dart';
 import 'package:bv_toolkit/services/preferences_service.dart';
@@ -335,5 +336,70 @@ void main() {
     await tapKey(tester, 'home-see-all');
     expect(selectedTab(tester), 1);
     expect(find.text('guarded screen'), findsOneWidget);
+  });
+
+  group('openReference', () {
+    const npcBullet = 'Normal break: ≤5 cm from spectacle plane';
+
+    String searchText(WidgetTester tester) => tester
+        .widget<TextField>(
+          find.descendant(
+            of: find.byType(ReferenceScreen),
+            matching: find.byType(TextField),
+          ),
+        )
+        .controller!
+        .text;
+
+    Finder entryTitle(String title) => find.descendant(
+      of: find.byType(ExpansionTile),
+      matching: find.text(title),
+    );
+
+    testWidgets('shows the Reference tab with the entry found and open', (
+      tester,
+    ) async {
+      await pumpShell(tester);
+      shellScope(tester).openReference('NPC Norms');
+      await tester.pumpAndSettle();
+      expect(selectedTab(tester), ShellTab.reference);
+      expect(searchText(tester), 'NPC Norms');
+      expect(entryTitle('NPC Norms'), findsOneWidget);
+      expect(find.text(npcBullet), findsOneWidget);
+    });
+
+    testWidgets('asking again re-opens an entry the user closed', (
+      tester,
+    ) async {
+      await pumpShell(tester);
+      shellScope(tester).openReference('NPC Norms');
+      await tester.pumpAndSettle();
+      await tester.tap(entryTitle('NPC Norms'));
+      await tester.pumpAndSettle();
+      expect(find.text(npcBullet), findsNothing);
+      await tapTab(tester, 'Home');
+      shellScope(tester).openReference('NPC Norms');
+      await tester.pumpAndSettle();
+      expect(selectedTab(tester), ShellTab.reference);
+      expect(find.text(npcBullet), findsOneWidget);
+    });
+
+    testWidgets('pops a screen pushed on the Reference tab first', (
+      tester,
+    ) async {
+      await pumpShell(tester);
+      await tapTab(tester, 'Reference');
+      Navigator.of(tester.element(find.byType(ReferenceScreen))).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('pushed page')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tapTab(tester, 'Home');
+      shellScope(tester).openReference('Brown Syndrome');
+      await tester.pumpAndSettle();
+      expect(find.text('pushed page'), findsNothing);
+      expect(searchText(tester), 'Brown Syndrome');
+    });
   });
 }

@@ -19,18 +19,23 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  static const _roots = <Widget>[
-    HomeScreen(),
-    PatientListScreen(),
-    ToolsHubScreen(),
-    ReferenceScreen(),
+  static const _tabCount = 4;
+
+  /// Carries an entry title from [_openReference] to the Reference screen.
+  final _referenceRequest = ValueNotifier<String?>(null);
+
+  late final _roots = <Widget>[
+    const HomeScreen(),
+    const PatientListScreen(),
+    const ToolsHubScreen(),
+    ReferenceScreen(request: _referenceRequest),
   ];
 
   final _navigatorKeys = List.generate(
-    _roots.length,
+    _tabCount,
     (_) => GlobalKey<NavigatorState>(),
   );
-  final _stacks = List.generate(_roots.length, (_) => _RouteStack());
+  final _stacks = List.generate(_tabCount, (_) => _RouteStack());
   late final _observers = [
     for (final stack in _stacks) <NavigatorObserver>[stack],
   ];
@@ -118,6 +123,21 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
+  /// Shows the Reference tab popped to its root, then the entry titled
+  /// [title] there — unless a route on the way refuses to pop.
+  Future<void> _openReference(String title) async {
+    _openTab(ShellTab.reference);
+    if (await _popToRoot(ShellTab.reference)) {
+      _referenceRequest.value = title;
+    }
+  }
+
+  @override
+  void dispose() {
+    _referenceRequest.dispose();
+    super.dispose();
+  }
+
   void _handleBack() {
     final navigator = _navigator(_tab);
     if (navigator != null && navigator.canPop()) {
@@ -136,6 +156,7 @@ class _MainShellState extends State<MainShell> {
       openTabAtRoot: _openTabAtRoot,
       openTool: _openTool,
       openPatient: _openPatient,
+      openReference: _openReference,
       child: PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, _) {
@@ -145,7 +166,7 @@ class _MainShellState extends State<MainShell> {
           body: IndexedStack(
             index: _tab,
             children: [
-              for (var i = 0; i < _roots.length; i++)
+              for (var i = 0; i < _tabCount; i++)
                 Navigator(
                   key: _navigatorKeys[i],
                   observers: _observers[i],

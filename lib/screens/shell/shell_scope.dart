@@ -14,6 +14,7 @@ class ShellScope extends InheritedWidget {
     required this.openTabAtRoot,
     required this.openTool,
     required this.openPatient,
+    required this.openReference,
     required super.child,
   });
 
@@ -23,6 +24,10 @@ class ShellScope extends InheritedWidget {
   final void Function(int tab) openTabAtRoot;
   final void Function(String toolId) openTool;
   final void Function(String patientId) openPatient;
+
+  /// Shows the Reference tab with the entry titled [entryTitle] found and
+  /// opened.
+  final void Function(String entryTitle) openReference;
 
   static ShellScope of(BuildContext c) {
     final scope = c.dependOnInheritedWidgetOfExactType<ShellScope>();
