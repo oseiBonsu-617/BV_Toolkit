@@ -11,7 +11,7 @@ import 'services/patient_service.dart';
 import 'services/preferences_service.dart';
 import 'services/product_infra_service.dart';
 import 'services/session_service.dart';
-import 'screens/auth/login_screen.dart';
+import 'screens/auth/welcome_screen.dart';
 import 'screens/shell/main_shell.dart';
 import 'screens/onboarding_screen.dart';
 
@@ -135,6 +135,9 @@ class _AuthGate extends StatefulWidget {
 class _AuthGateState extends State<_AuthGate> {
   static const _onboardingCompleteKey = 'onboarding_complete';
   bool? _showOnboarding;
+  // Set when onboarding's "Log In" was used, so Welcome opens Sign In on top.
+  bool _openSignInOnStart = false;
+  bool _wasLoggedIn = false;
 
   @override
   void initState() {
@@ -153,6 +156,11 @@ class _AuthGateState extends State<_AuthGate> {
     if (mounted) setState(() => _showOnboarding = !complete);
   }
 
+  Future<void> _finishOnboardingToSignIn() async {
+    _openSignInOnStart = true;
+    await _finishOnboarding();
+  }
+
   Future<void> _finishOnboarding() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -166,15 +174,24 @@ class _AuthGateState extends State<_AuthGate> {
   @override
   Widget build(BuildContext context) {
     final isLoggedIn = context.watch<AuthService>().isLoggedIn;
+    if (isLoggedIn && !_wasLoggedIn) {
+      // Sign In / Create account are pushed above Welcome; once signed in,
+      // clear them so the shell is not left underneath an auth screen.
+      _openSignInOnStart = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+      });
+    }
+    _wasLoggedIn = isLoggedIn;
     if (isLoggedIn) return const MainShell();
     final showOnboarding = _showOnboarding;
     if (showOnboarding == null) return const _StartupSplash();
     return showOnboarding
         ? OnboardingScreen(
             onComplete: _finishOnboarding,
-            onLogIn: _finishOnboarding,
+            onLogIn: _finishOnboardingToSignIn,
           )
-        : const LoginScreen();
+        : WelcomeScreen(openSignInOnStart: _openSignInOnStart);
   }
 }
 

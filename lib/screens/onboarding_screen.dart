@@ -244,7 +244,7 @@ class _HeroMark extends StatelessWidget {
             height: size,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFE2F4EE),
+              color: Color(0xFFE4ECF5),
             ),
             child: const Icon(
               Icons.remove_red_eye_outlined,
