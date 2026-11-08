@@ -3,8 +3,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-const kPrimary = Color(0xFF1D9E75);
-const kPrimaryDark = Color(0xFF158060);
+// Brand: clinical blue on white.
+const kPrimary = Color(0xFF1F5FAF);
+const kPrimaryDark = Color(0xFF174A8A);
+/// Lighter brand blue for text and icons sitting on dark surfaces.
+const kPrimaryOnDark = Color(0xFF5B8FD6);
+
+/// The brand blue to use for links and icons on the current background:
+/// [kPrimaryOnDark] in dark mode, [kPrimary] otherwise.
+Color primaryOf(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark ? kPrimaryOnDark : kPrimary;
 
 // Result colours
 const kOkBg = Color(0xFFE1F5EE);
@@ -31,7 +39,13 @@ ThemeData buildTheme(Brightness brightness) {
   final isDark = brightness == Brightness.dark;
   return ThemeData(
     brightness: brightness,
-    colorSchemeSeed: kPrimary,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: kPrimary,
+      brightness: brightness,
+    ).copyWith(
+      primary: isDark ? kPrimaryOnDark : kPrimary,
+      onPrimary: Colors.white,
+    ),
     useMaterial3: true,
     scaffoldBackgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF2F2F7),
     cardColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
