@@ -44,7 +44,8 @@ ThemeData buildTheme(Brightness brightness) {
       brightness: brightness,
     ).copyWith(
       primary: isDark ? kPrimaryOnDark : kPrimary,
-      onPrimary: Colors.white,
+      // Dark navy on the lighter dark-mode blue (white would be ~3.3:1).
+      onPrimary: isDark ? const Color(0xFF0B1F3A) : Colors.white,
     ),
     useMaterial3: true,
     scaffoldBackgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF2F2F7),

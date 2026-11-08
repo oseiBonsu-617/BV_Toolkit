@@ -330,6 +330,10 @@ void main() {
         const Color(0xFF5B8FD6),
       );
       expect(buildTheme(Brightness.light).colorScheme.onPrimary, Colors.white);
+      expect(
+        buildTheme(Brightness.dark).colorScheme.onPrimary,
+        const Color(0xFF0B1F3A),
+      );
     });
   });
 }
