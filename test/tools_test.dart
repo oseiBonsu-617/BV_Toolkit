@@ -6,6 +6,7 @@ import 'package:bv_toolkit/screens/tools/accommodation_screen.dart';
 import 'package:bv_toolkit/screens/tools/analysis_screen.dart';
 import 'package:bv_toolkit/screens/tools/diagnosis_screen.dart';
 import 'package:bv_toolkit/screens/tools/graphical_analysis_screen.dart';
+import 'package:bv_toolkit/screens/tools/parks_screen.dart';
 import 'package:bv_toolkit/screens/tools/phoria_screen.dart';
 import 'package:bv_toolkit/screens/tools/tool_workspace_screen.dart';
 import 'package:bv_toolkit/screens/tools/tools_hub_screen.dart';
@@ -34,7 +35,7 @@ Future<void> openTool(WidgetTester t, String id) async {
 }
 
 void main() {
-  testWidgets('hub lists six tools', (t) async {
+  testWidgets('hub lists every tool', (t) async {
     await pumpHub(t);
     for (final tool in kTools) {
       expect(find.byKey(Key('tool-row-${tool.id}')), findsOneWidget);
@@ -93,6 +94,7 @@ void main() {
       'analysis': AnalysisScreen,
       'graphical': GraphicalAnalysisBody,
       'diagnose': DiagnosisScreen,
+      'parks': ParksScreen,
     };
     expect(bodies.keys, unorderedEquals(kTools.map((tool) => tool.id)));
     await pumpHub(t);

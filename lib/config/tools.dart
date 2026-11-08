@@ -62,6 +62,14 @@ const List<ToolDef> kTools = [
     group: 'Diagnosis',
     icon: Icons.medical_services_outlined,
   ),
+  ToolDef(
+    id: 'parks',
+    name: "Park's three-step test",
+    shortLabel: "Park's",
+    description: 'Vertical muscle palsy',
+    group: 'Diagnosis',
+    icon: Icons.swap_vert,
+  ),
 ];
 
 const List<String> kToolGroups = ['Measurements', 'Analysis', 'Diagnosis'];

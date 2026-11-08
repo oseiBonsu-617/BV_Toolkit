@@ -5,6 +5,7 @@ import 'accommodation_screen.dart';
 import 'analysis_screen.dart';
 import 'diagnosis_screen.dart';
 import 'graphical_analysis_screen.dart';
+import 'parks_screen.dart';
 import 'phoria_screen.dart';
 import 'vergence_screen.dart';
 
@@ -104,6 +105,7 @@ class ToolWorkspaceScreenState extends State<ToolWorkspaceScreen> {
     'analysis' => const AnalysisScreen(),
     'graphical' => GraphicalAnalysisBody(key: _graphicalKey),
     'diagnose' => const DiagnosisScreen(),
+    'parks' => const ParksScreen(),
     _ => throw StateError('No body for tool "$id"'),
   };
 

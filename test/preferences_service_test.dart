@@ -43,8 +43,8 @@ void main() {
     expect(s.homeShortcuts, ['diagnose', 'reference', 'analysis']);
   });
   test('kTools and kShortcuts shape', () {
-    expect(kTools.map((t) => t.id), ['phoria', 'vergence', 'accommodation', 'analysis', 'graphical', 'diagnose']);
-    expect(kShortcuts.length, 8);
-    expect(kShortcuts.map((s) => s.id).skip(6), ['patients', 'reference']);
+    expect(kTools.map((t) => t.id), ['phoria', 'vergence', 'accommodation', 'analysis', 'graphical', 'diagnose', 'parks']);
+    expect(kShortcuts.length, 9);
+    expect(kShortcuts.map((s) => s.id).skip(7), ['patients', 'reference']);
   });
 }
