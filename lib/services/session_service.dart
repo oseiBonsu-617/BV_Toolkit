@@ -28,17 +28,26 @@ class SessionService extends ChangeNotifier {
     return _cache[patientId]!;
   }
 
+  /// Counts this user's sessions since a time, and their patients. Only
+  /// sessions of patients still on file count. Arguments: user id, since,
+  /// user id.
+  @visibleForTesting
+  static const weekSummarySql =
+      'SELECT COUNT(*) AS sessions, COUNT(DISTINCT patient_id) AS patients '
+      'FROM test_sessions WHERE user_id = ? AND created_at >= ? '
+      'AND patient_id IN (SELECT id FROM patients WHERE user_id = ?)';
+
   /// How many sessions this user saved since [since], and for how many
   /// different patients. `created_at` is stored as a local ISO-8601 string,
   /// so comparing it with [since] as a string orders by time.
   Future<({int sessions, int patients})> weekSummary(DateTime since) async {
     if (_userId == null) return (sessions: 0, patients: 0);
     final db = await DatabaseHelper.get();
-    final rows = await db.rawQuery(
-      'SELECT COUNT(*) AS sessions, COUNT(DISTINCT patient_id) AS patients '
-      'FROM test_sessions WHERE user_id = ? AND created_at >= ?',
-      [_userId, since.toIso8601String()],
-    );
+    final rows = await db.rawQuery(weekSummarySql, [
+      _userId,
+      since.toIso8601String(),
+      _userId,
+    ]);
     final row = rows.isEmpty ? const <String, Object?>{} : rows.first;
     return (
       sessions: (row['sessions'] as num?)?.toInt() ?? 0,

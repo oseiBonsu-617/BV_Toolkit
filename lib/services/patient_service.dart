@@ -106,9 +106,13 @@ class PatientService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Deletes the patient and, with them, their test sessions.
   Future<void> delete(String id) async {
     final db = await DatabaseHelper.get();
-    await db.delete('patients', where: 'id = ?', whereArgs: [id]);
+    await db.transaction((txn) async {
+      await txn.delete('test_sessions', where: 'patient_id = ?', whereArgs: [id]);
+      await txn.delete('patients', where: 'id = ?', whereArgs: [id]);
+    });
     _patients.removeWhere((p) => p.id == id);
     notifyListeners();
   }
