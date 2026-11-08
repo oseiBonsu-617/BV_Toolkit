@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../theme.dart';
+import 'auth_widgets.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -101,108 +103,116 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final busy = _loading || _googleLoading;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF0F0F0F)
-          : const Color(0xFFF2F2F7),
-      appBar: AppBar(
-        title: const Text('Create account'),
-        leading: const BackButton(),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      backgroundColor: authBackgroundOf(context),
+      appBar: authAppBar(context),
       body: SafeArea(
+        top: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _section(isDark, 'Personal', [
-                _field(
-                  controller: _name,
-                  label: 'Full name',
-                  hint: 'Dr. Jane Smith',
-                  action: TextInputAction.next,
-                ),
-                const SizedBox(height: 12),
-                _titlePicker(isDark),
-                const SizedBox(height: 12),
-                _field(
-                  controller: _clinic,
-                  label: 'Clinic / Practice (optional)',
-                  hint: 'City Eye Centre',
-                  action: TextInputAction.next,
-                ),
-              ]),
-              const SizedBox(height: 12),
-              _googleButton(
-                isDark: isDark,
-                loading: _googleLoading,
-                onPressed: _signInWithGoogle,
+              const AuthHeader(
+                title: "Let's get started!",
+                subtitle: 'Create your new account',
               ),
-              const SizedBox(height: 12),
-              _section(isDark, 'Account', [
-                _field(
-                  controller: _email,
-                  label: 'Email',
-                  hint: 'you@clinic.com',
-                  keyboard: TextInputType.emailAddress,
-                  action: TextInputAction.next,
+              const SizedBox(height: 32),
+              const AuthSectionLabel('About you'),
+              TextField(
+                controller: _name,
+                textInputAction: TextInputAction.next,
+                textCapitalization: TextCapitalization.words,
+                decoration: authFieldDecoration(context, hint: 'Full name'),
+              ),
+              const SizedBox(height: 14),
+              _titlePicker(),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _clinic,
+                textInputAction: TextInputAction.next,
+                textCapitalization: TextCapitalization.words,
+                decoration: authFieldDecoration(
+                  context,
+                  hint: 'Clinic / practice (optional)',
                 ),
-                const SizedBox(height: 12),
-                _field(
-                  controller: _password,
-                  label: 'Password',
-                  hint: '••••••••',
-                  obscure: _obscurePw,
-                  action: TextInputAction.next,
+              ),
+              const SizedBox(height: 26),
+              const AuthSectionLabel('Account'),
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                autocorrect: false,
+                decoration: authFieldDecoration(
+                  context,
+                  hint: 'Email address',
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _password,
+                obscureText: _obscurePw,
+                textInputAction: TextInputAction.next,
+                decoration: authFieldDecoration(
+                  context,
+                  hint: 'Password',
                   suffix: _eyeButton(
                     _obscurePw,
                     () => setState(() => _obscurePw = !_obscurePw),
                   ),
                 ),
-                const SizedBox(height: 12),
-                _field(
-                  controller: _confirm,
-                  label: 'Confirm password',
-                  hint: '••••••••',
-                  obscure: _obscureCf,
-                  action: TextInputAction.done,
-                  onSubmitted: (_) => _submit(),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _confirm,
+                obscureText: _obscureCf,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _submit(),
+                decoration: authFieldDecoration(
+                  context,
+                  hint: 'Confirm password',
                   suffix: _eyeButton(
                     _obscureCf,
                     () => setState(() => _obscureCf = !_obscureCf),
                   ),
                 ),
-              ]),
+              ),
               if (_error != null) ...[
-                const SizedBox(height: 12),
-                _errorBox(_error!),
+                const SizedBox(height: 16),
+                AuthErrorBox(_error!),
               ],
               if (_success != null) ...[
-                const SizedBox(height: 12),
-                _successBox(_success!),
+                const SizedBox(height: 16),
+                AuthSuccessBox(_success!),
               ],
+              const SizedBox(height: 24),
+              AuthPrimaryButton(
+                label: 'Create account',
+                loading: _loading,
+                onPressed: busy ? null : _submit,
+              ),
+              const SizedBox(height: 22),
+              const AuthOrDivider(),
+              const SizedBox(height: 22),
+              AuthGoogleButton(
+                loading: _googleLoading,
+                onPressed: busy ? null : _signInWithGoogle,
+              ),
               const SizedBox(height: 20),
-              SizedBox(
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _loading || _googleLoading ? null : _submit,
-                  child: _loading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text('Create Account'),
+              AuthFooterLink(
+                key: const Key('auth-footer-link'),
+                prompt: 'Already have an account? ',
+                action: 'Sign in',
+                // Replace so that back from Sign In returns to Welcome.
+                onTap: () => Navigator.pushReplacement(
+                  context,
+                  appRoute(const LoginScreen()),
                 ),
               ),
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -210,121 +220,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _section(bool isDark, String heading, List<Widget> children) {
+  Widget _titlePicker() {
+    final outline = authOutlineOf(context);
+    final chips = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: _titles.map((t) {
+        final selected = _title == t;
+        return Semantics(
+          button: true,
+          selected: selected,
+          child: GestureDetector(
+            onTap: () => setState(() => _title = selected ? null : t),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? kPrimary : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: selected ? kPrimary : outline,
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                t,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected ? Colors.white : null,
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          padding: const EdgeInsets.only(left: 6, bottom: 8),
           child: Text(
-            heading.toUpperCase(),
+            'Title',
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.6,
-              color: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
+              fontSize: 13,
+              color: authSecondaryTextOf(context),
             ),
           ),
         ),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
-              width: 0.5,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: children,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _titlePicker(bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Title',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 6),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _titles.map((t) {
-            final selected = _title == t;
-            return GestureDetector(
-              onTap: () => setState(() => _title = selected ? null : t),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? kPrimary
-                      : (isDark
-                            ? const Color(0xFF2C2C2E)
-                            : const Color(0xFFF2F2F7)),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: selected
-                        ? kPrimary
-                        : (isDark
-                              ? const Color(0xFF48484A)
-                              : const Color(0xFFE5E5EA)),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  t,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: selected ? Colors.white : null,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _field({
-    required TextEditingController controller,
-    required String label,
-    String? hint,
-    TextInputType keyboard = TextInputType.text,
-    TextInputAction action = TextInputAction.next,
-    bool obscure = false,
-    Widget? suffix,
-    void Function(String)? onSubmitted,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          keyboardType: keyboard,
-          textInputAction: action,
-          obscureText: obscure,
-          onSubmitted: onSubmitted,
-          decoration: InputDecoration(hintText: hint, suffixIcon: suffix),
-        ),
+        chips,
       ],
     );
   }
@@ -337,80 +282,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
     ),
     onPressed: onTap,
   );
-
-  Widget _googleButton({
-    required bool isDark,
-    required bool loading,
-    required VoidCallback onPressed,
-  }) {
-    return SizedBox(
-      height: 48,
-      child: OutlinedButton.icon(
-        onPressed: loading || _loading ? null : onPressed,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: isDark ? const Color(0xFF1C1C1E) : Colors.white,
-          side: BorderSide(
-            color: isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        icon: loading
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.g_mobiledata, size: 28),
-        label: const Text('Continue with Google'),
-      ),
-    );
-  }
-
-  Widget _errorBox(String msg) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: kBadBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: kBadBorder, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, size: 16, color: kBadText),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              msg,
-              style: const TextStyle(fontSize: 13, color: kBadText),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _successBox(String msg) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: kOkBg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: kOkBorder, width: 0.5),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.mark_email_read_outlined, size: 16, color: kOkText),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              msg,
-              style: const TextStyle(fontSize: 13, color: kOkText),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
