@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../config/tools.dart';
+import '../services/preferences_service.dart';
+import '../widgets/shortcut_grid.dart';
 import '../theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -18,28 +22,8 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _pageController = PageController();
-  final _selectedTools = <String>{'Phoria', 'Vergence', 'Graphical'};
-  String _selectedGoal = 'Rank clinical findings faster';
+  final _selected = List<String>.of(kDefaultShortcuts);
   int _page = 0;
-
-  static const _tools = [
-    _OnboardingOption('Phoria', Icons.remove_red_eye_outlined),
-    _OnboardingOption('Vergence', Icons.compare_arrows_outlined),
-    _OnboardingOption('Accom.', Icons.blur_on_outlined),
-    _OnboardingOption('Graphical', Icons.stacked_line_chart_outlined),
-    _OnboardingOption('Diagnose', Icons.fact_check_outlined),
-    _OnboardingOption('Reference', Icons.menu_book_outlined),
-    _OnboardingOption('Patients', Icons.people_outline),
-    _OnboardingOption('Sessions', Icons.assignment_outlined),
-    _OnboardingOption('Plans', Icons.route_outlined),
-  ];
-
-  static const _goals = [
-    'Rank clinical findings faster',
-    'Keep patient sessions organized',
-    'Compare findings with norms',
-    'Build diagnosis plans with confidence',
-  ];
 
   @override
   void dispose() {
@@ -47,9 +31,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _next() {
+  Future<void> _next() async {
     HapticFeedback.selectionClick();
-    if (_page == 2) {
+    if (_page == 1) {
+      await context.read<PreferencesService>().setHomeShortcuts(_selected);
       widget.onComplete();
       return;
     }
@@ -73,7 +58,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final background = isDark
         ? const Color(0xFF0F0F0F)
         : const Color(0xFFF2F2F7);
-    final disabled = _page == 1 && _selectedTools.length < 3;
+    final disabled = _page == 1 && _selected.length < kMinShortcuts;
 
     return Scaffold(
       backgroundColor: background,
@@ -103,21 +88,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _WelcomePage(isDark: isDark),
                   _ToolsPage(
                     isDark: isDark,
-                    selectedTools: _selectedTools,
-                    onToggle: (label) {
+                    selected: _selected,
+                    onToggle: (id) {
                       setState(() {
-                        if (_selectedTools.contains(label)) {
-                          _selectedTools.remove(label);
+                        if (_selected.contains(id)) {
+                          _selected.remove(id);
                         } else {
-                          _selectedTools.add(label);
+                          _selected.add(id);
                         }
                       });
                     },
-                  ),
-                  _GoalsPage(
-                    isDark: isDark,
-                    selectedGoal: _selectedGoal,
-                    onSelect: (goal) => setState(() => _selectedGoal = goal),
                   ),
                 ],
               ),
@@ -126,7 +106,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.fromLTRB(28, 8, 28, 28),
               child: Column(
                 children: [
-                  _Dots(current: _page, count: 3),
+                  _Dots(current: _page, count: 2),
                   const SizedBox(height: 24),
                   SizedBox(
                     height: 54,
@@ -306,12 +286,12 @@ class _HeroMark extends StatelessWidget {
 class _ToolsPage extends StatelessWidget {
   const _ToolsPage({
     required this.isDark,
-    required this.selectedTools,
+    required this.selected,
     required this.onToggle,
   });
 
   final bool isDark;
-  final Set<String> selectedTools;
+  final List<String> selected;
   final ValueChanged<String> onToggle;
 
   @override
@@ -341,196 +321,12 @@ class _ToolsPage extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 34),
-          GridView.builder(
-            itemCount: _OnboardingScreenState._tools.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 0.95,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemBuilder: (context, index) {
-              final option = _OnboardingScreenState._tools[index];
-              return _ToolTile(
-                option: option,
-                selected: selectedTools.contains(option.label),
-                isDark: isDark,
-                onTap: () => onToggle(option.label),
-              );
-            },
+          ShortcutGrid(
+            selected: selected,
+            onToggle: onToggle,
+            crossAxisCount: 2,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ToolTile extends StatelessWidget {
-  const _ToolTile({
-    required this.option,
-    required this.selected,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  final _OnboardingOption option;
-  final bool selected;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final selectedColor = isDark ? const Color(0xFFEAF8F2) : Colors.white;
-    return Material(
-      color: selected
-          ? const Color(0xFF303538)
-          : (isDark ? const Color(0xFF1C1C1E) : Colors.white),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: selected
-                  ? const Color(0xFF303538)
-                  : (isDark
-                        ? const Color(0xFF38383A)
-                        : const Color(0xFFE5E5EA)),
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                option.icon,
-                size: 31,
-                color: selected
-                    ? selectedColor
-                    : (isDark ? Colors.white : const Color(0xFF303538)),
-              ),
-              const SizedBox(height: 9),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  option.label,
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: selected
-                        ? selectedColor
-                        : (isDark ? Colors.white : const Color(0xFF303538)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GoalsPage extends StatelessWidget {
-  const _GoalsPage({
-    required this.isDark,
-    required this.selectedGoal,
-    required this.onSelect,
-  });
-
-  final bool isDark;
-  final String selectedGoal;
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(28, 32, 28, 20),
-      child: Column(
-        children: [
-          Text(
-            'What do you want BV Toolkit to help with?',
-            style: TextStyle(
-              fontSize: 27,
-              height: 1.12,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : const Color(0xFF2F3336),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 38),
-          ..._OnboardingScreenState._goals.map(
-            (goal) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _GoalTile(
-                label: goal,
-                selected: selectedGoal == goal,
-                isDark: isDark,
-                onTap: () => onSelect(goal),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GoalTile extends StatelessWidget {
-  const _GoalTile({
-    required this.label,
-    required this.selected,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected
-          ? const Color(0xFF303538)
-          : (isDark ? const Color(0xFF1C1C1E) : Colors.white),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 78),
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: selected
-                  ? const Color(0xFF303538)
-                  : (isDark
-                        ? const Color(0xFF38383A)
-                        : const Color(0xFFE5E5EA)),
-            ),
-          ),
-          alignment: Alignment.centerLeft,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 18,
-              height: 1.2,
-              fontWeight: FontWeight.w700,
-              color: selected
-                  ? Colors.white
-                  : (isDark ? Colors.white : const Color(0xFF242628)),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -561,11 +357,4 @@ class _Dots extends StatelessWidget {
       }),
     );
   }
-}
-
-class _OnboardingOption {
-  final String label;
-  final IconData icon;
-
-  const _OnboardingOption(this.label, this.icon);
 }
