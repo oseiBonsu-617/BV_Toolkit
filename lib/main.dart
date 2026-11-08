@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 import 'theme.dart';
 import 'services/auth_service.dart';
 import 'services/patient_service.dart';
+import 'services/preferences_service.dart';
 import 'services/product_infra_service.dart';
 import 'services/session_service.dart';
 import 'screens/home_screen.dart';
@@ -44,6 +45,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: auth),
+        ChangeNotifierProvider(create: (_) => PreferencesService()..load()),
         ChangeNotifierProxyProvider<AuthService, PatientService>(
           create: (_) => PatientService(),
           update: (_, authSvc, patients) {
