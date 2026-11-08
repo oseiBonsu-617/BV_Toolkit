@@ -26,6 +26,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _error;
   String? _success;
 
+  static const _chipAnimation = Duration(milliseconds: 120);
+
   static const _titles = [
     'OD',
     'Optometrist',
@@ -226,6 +228,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _titlePicker() {
     final outline = authOutlineOf(context);
+    final unselectedText = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : const Color(0xFF1C1C1E);
+    final baseStyle =
+        Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
     final chips = Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -237,22 +244,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: GestureDetector(
             onTap: () => setState(() => _title = selected ? null : t),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 120),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              duration: _chipAnimation,
+              // 44 pt minimum tap target; the label stays centred in the pill.
+              constraints: const BoxConstraints(minHeight: 44),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: selected ? kPrimary : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(22),
                 border: Border.all(
                   color: selected ? kPrimary : outline,
                   width: 1,
                 ),
               ),
-              child: Text(
-                t,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected ? Colors.white : null,
+              // Animate the label colour with the fill so it never shows
+              // white-on-white mid-animation.
+              child: Align(
+                widthFactor: 1,
+                child: AnimatedDefaultTextStyle(
+                  duration: _chipAnimation,
+                  // Replaces (not merges) the inherited style, so start from
+                  // the theme's body style to keep its font family.
+                  style: baseStyle.copyWith(
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    color: selected ? Colors.white : unselectedText,
+                  ),
+                  child: Text(t),
                 ),
               ),
             ),

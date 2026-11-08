@@ -311,6 +311,39 @@ void main() {
     }
   });
 
+  group('title chips', () {
+    testWidgets('have a 44 pt tap target and the label animates with the fill', (
+      tester,
+    ) async {
+      _phoneView(tester);
+      await _pumpWelcome(tester);
+      await tester.tap(find.byKey(const Key('welcome-create-account')));
+      await tester.pumpAndSettle();
+      final chip = find.ancestor(
+        of: find.text('OD'),
+        matching: find.byType(AnimatedContainer),
+      );
+      expect(tester.getSize(chip).height, greaterThanOrEqualTo(44));
+      // Still a compact pill, not stretched across the row.
+      expect(tester.getSize(chip).width, lessThan(120));
+
+      await tester.tap(find.text('OD'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 30));
+      // Mid-animation the label must not already be white on a near-white fill.
+      final midColor = DefaultTextStyle.of(tester.element(find.text('OD'))).style.color!;
+      expect(midColor, isNot(Colors.white));
+      await tester.pumpAndSettle();
+      final endColor = DefaultTextStyle.of(tester.element(find.text('OD'))).style.color;
+      expect(endColor, Colors.white);
+      final ctx = tester.element(find.text('OD'));
+      expect(
+        DefaultTextStyle.of(ctx).style.fontFamily,
+        Theme.of(ctx).textTheme.bodyMedium!.fontFamily,
+      );
+    });
+  });
+
   group('brand colours', () {
     test('kPrimary is clinical blue', () {
       expect(kPrimary, const Color(0xFF1F5FAF));
