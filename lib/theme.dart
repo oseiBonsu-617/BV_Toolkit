@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 const kPrimary = Color(0xFF1D9E75);
 const kPrimaryDark = Color(0xFF158060);
@@ -40,6 +41,7 @@ ThemeData buildTheme(Brightness brightness) {
       foregroundColor: isDark ? Colors.white : Colors.black,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
+      systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       titleTextStyle: TextStyle(
         fontSize: 17,
         fontWeight: FontWeight.w500,

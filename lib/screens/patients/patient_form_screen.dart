@@ -226,7 +226,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
 
   Widget _genderPicker(bool isDark) {
     const options = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return SizedBox(width: double.infinity, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const Text('Gender', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500,
           color: Color(0xFF8E8E93))),
       const SizedBox(height: 8),
@@ -249,7 +249,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
           );
         }).toList(),
       ),
-    ]);
+    ]));
   }
 
   Widget _dobPicker(bool isDark) {
