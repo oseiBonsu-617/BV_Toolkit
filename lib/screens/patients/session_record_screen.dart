@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/assessment.dart';
 import '../../models/test_session.dart';
 import '../../services/assessment_engine.dart';
+import '../../services/patient_service.dart';
 import '../../services/session_service.dart';
 import '../../theme.dart';
 import '../../widgets/diagnosis_plan_view.dart';
@@ -280,6 +281,7 @@ class _SessionRecordScreenState extends State<SessionRecordScreen> {
         visitNote: _noteCtrl.text,
         data: data,
       );
+      if (mounted) await context.read<PatientService>().touch(widget.patientId);
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) showAppSnackBar(context, e.toString(), error: true);

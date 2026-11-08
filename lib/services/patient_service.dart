@@ -19,6 +19,22 @@ class PatientService extends ChangeNotifier {
 
   bool get hasPatients => _patients.isNotEmpty;
 
+  /// Most recently updated patients, newest first. Ignores the search query.
+  List<Patient> get recent => recentOf(_patients);
+
+  static List<Patient> recentOf(Iterable<Patient> all, {int limit = 3}) {
+    final sorted = all.toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return sorted.take(limit).toList();
+  }
+
+  /// Bumps a patient's updatedAt to now (copyWith sets it). No-op if unknown.
+  Future<void> touch(String patientId) async {
+    final p = getById(patientId);
+    if (p == null) return;
+    await update(p.copyWith());
+  }
+
   void search(String query) {
     _query = query;
     notifyListeners();
